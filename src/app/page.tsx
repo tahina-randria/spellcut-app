@@ -11,9 +11,12 @@ import {
   ArrowRight,
   Timer,
   TextAa,
-  Eye,
   DownloadSimple,
   X,
+  NumberOne,
+  NumberTwo,
+  NumberThree,
+  Play,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 
@@ -36,10 +39,7 @@ interface AnalysisResult {
   medium_confidence_errors: number;
   processing_time_seconds: number;
   errors: SpellError[];
-  video_info?: {
-    duration: number;
-    resolution: string;
-  };
+  video_info?: { duration: number; resolution: string };
 }
 
 export default function Home() {
@@ -52,16 +52,14 @@ export default function Home() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile?.type.startsWith("video/")) {
-      setFile(droppedFile);
-    }
+    const f = e.dataTransfer.files[0];
+    if (f?.type.startsWith("video/")) setFile(f);
   }, []);
 
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const selected = e.target.files?.[0];
-      if (selected) setFile(selected);
+      const f = e.target.files?.[0];
+      if (f) setFile(f);
     },
     []
   );
@@ -70,22 +68,17 @@ export default function Home() {
     if (!file) return;
     setStatus("uploading");
     setProgress(10);
-
-    // Simulate (replace with real API)
-    const steps = [
-      { progress: 20, delay: 500 },
-      { progress: 40, delay: 2000 },
-      { progress: 60, delay: 3000 },
-      { progress: 80, delay: 2000 },
-      { progress: 95, delay: 2000 },
-    ];
-
     setStatus("analyzing");
-    for (const step of steps) {
-      await new Promise((r) => setTimeout(r, step.delay));
-      setProgress(step.progress);
+    for (const s of [
+      { p: 25, d: 800 },
+      { p: 50, d: 2500 },
+      { p: 75, d: 2500 },
+      { p: 90, d: 2000 },
+      { p: 98, d: 1500 },
+    ]) {
+      await new Promise((r) => setTimeout(r, s.d));
+      setProgress(s.p);
     }
-
     setResult({
       total_errors: 3,
       high_confidence_errors: 3,
@@ -94,46 +87,43 @@ export default function Home() {
       video_info: { duration: 62.2, resolution: "1920x1080" },
       errors: [
         {
-          timecode: "00:00:13.00",
+          timecode: "00:13",
           word: "fond",
           correction: "fonds",
           type: "orthographe",
           confidence: 99,
           confidence_level: "high",
           explanation:
-            "Dans le contexte financier, il faut \u00ab fonds \u00bb (portefeuille) et non \u00ab fond \u00bb (dessous).",
+            "En finance, on \u00e9crit \u00ab fonds \u00bb (portefeuille), pas \u00ab fond \u00bb.",
           context: "G\u00e9rant de fond \u00e9mergent",
         },
         {
-          timecode: "00:00:42.00",
+          timecode: "00:42",
           word: "premiere",
           correction: "premi\u00e8re",
           type: "accent",
           confidence: 99,
           confidence_level: "high",
-          explanation:
-            "L\u2019accent grave est obligatoire sur \u00ab premi\u00e8re \u00bb.",
+          explanation: "Accent grave obligatoire.",
           context: "Aujourd\u2019hui la premiere question",
         },
         {
-          timecode: "00:00:36.00",
+          timecode: "00:36",
           word: "EMERGENTS",
           correction: "\u00c9MERGENTS",
           type: "accent",
           confidence: 100,
           confidence_level: "high",
-          explanation:
-            "Les accents sur les majuscules sont obligatoires en fran\u00e7ais.",
+          explanation: "Accent obligatoire sur les majuscules.",
           context: "CARMIGNAC EMERGENTS",
         },
       ],
     });
-
     setProgress(100);
     setStatus("done");
   };
 
-  const resetAnalysis = () => {
+  const reset = () => {
     setStatus("idle");
     setFile(null);
     setResult(null);
@@ -141,102 +131,114 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Grain overlay */}
+      <div
+        className="pointer-events-none fixed inset-0 z-50 opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "256px 256px",
+        }}
+      />
+
+      {/* Subtle radial glow */}
+      <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-white/[0.02] rounded-full blur-[120px]" />
+
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-foreground flex items-center justify-center">
-              <TextAa weight="bold" size={16} className="text-background" />
-            </div>
-            <span className="text-[15px] font-semibold tracking-tight">
+      <nav className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl">
+        <div className="mx-auto max-w-3xl px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TextAa weight="bold" size={18} />
+            <span className="text-[14px] font-medium tracking-[-0.01em]">
               SpellCut
             </span>
           </div>
-          <span className="text-[11px] text-muted-foreground hidden sm:block tracking-wide">
-            Chaque erreur est v\u00e9rifi\u00e9e visuellement par l&apos;IA
-          </span>
+          {status === "done" && (
+            <button
+              onClick={reset}
+              className="text-[12px] text-white/50 hover:text-white/80 transition-colors"
+            >
+              Nouvelle analyse
+            </button>
+          )}
         </div>
       </nav>
 
-      <main className="mx-auto max-w-5xl px-6 pt-28 pb-20">
-        {/* Hero */}
-        {status === "idle" && !file && (
-          <section className="text-center mb-20">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-border/60 text-[11px] text-muted-foreground mb-8 tracking-wide">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--sc-success)]" />
-              Moteur v1 &mdash; 0 faux positif sur vid\u00e9o r\u00e9elle
+      <main className="relative z-10 mx-auto max-w-3xl px-6 pt-24 pb-20">
+        {/* IDLE — Guide + Upload */}
+        {status === "idle" && (
+          <>
+            {/* Hero — court et direct */}
+            <div className="mt-12 mb-16 text-center">
+              <h1 className="text-[32px] font-medium tracking-[-0.02em] leading-[1.2] text-white mb-3">
+                V\u00e9rifie l&apos;orthographe de ta vid\u00e9o
+              </h1>
+              <p className="text-[14px] text-white/40 max-w-md mx-auto">
+                Titres, sous-titres, lower thirds. Chaque texte est lu et
+                v\u00e9rifi\u00e9 directement depuis l&apos;image.
+              </p>
             </div>
 
-            <h1 className="text-[clamp(2rem,5vw,3.5rem)] font-semibold tracking-tight leading-[1.15] mb-5">
-              Les fautes dans tes vid\u00e9os,
-              <br />
-              <span className="text-muted-foreground">
-                trouv\u00e9es en un clic.
-              </span>
-            </h1>
-            <p className="text-[15px] text-muted-foreground max-w-lg mx-auto mb-14 leading-relaxed">
-              Drop ta vid\u00e9o. SpellCut d\u00e9tecte chaque erreur
-              d&apos;orthographe, grammaire et typographie dans tes titres,
-              lower thirds et sous-titres.
-            </p>
-
-            {/* How it works */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-16">
+            {/* Guide — 3 \u00e9tapes visuelles */}
+            <div className="mb-12 grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-white/[0.06]">
               {[
                 {
-                  icon: UploadSimple,
-                  step: "01",
-                  title: "Drop ta vid\u00e9o",
-                  desc: "MP4, MOV, 4K \u2014 tous formats",
+                  num: NumberOne,
+                  label: "Drop ta vid\u00e9o",
+                  sub: "MP4, MOV, 4K",
                 },
                 {
-                  icon: Eye,
-                  step: "02",
-                  title: "L\u2019IA lit chaque pixel",
-                  desc: "Claude Vision v\u00e9rifie visuellement",
+                  num: NumberTwo,
+                  label: "Analyse automatique",
+                  sub: "IA lit chaque frame",
                 },
                 {
-                  icon: CheckCircle,
-                  step: "03",
-                  title: "R\u00e9sultat avec timecodes",
-                  desc: "Rapport + markers DaVinci Resolve",
+                  num: NumberThree,
+                  label: "Erreurs + timecodes",
+                  sub: "Export DaVinci / FCP",
                 },
-              ].map(({ icon: Icon, step, title, desc }) => (
+              ].map(({ num: Num, label, sub }, i) => (
                 <div
-                  key={step}
-                  className="p-5 rounded-2xl border border-border/40 text-left"
+                  key={i}
+                  className={`p-5 bg-white/[0.02] ${i === 0 ? "bg-white/[0.04]" : ""}`}
                 >
-                  <div className="flex items-center gap-2.5 mb-3">
-                    <span className="text-[10px] font-medium text-muted-foreground tracking-widest">
-                      {step}
-                    </span>
-                    <Icon size={20} weight="regular" className="text-muted-foreground" />
-                  </div>
-                  <h3 className="text-[13px] font-medium mb-0.5">{title}</h3>
-                  <p className="text-[12px] text-muted-foreground leading-relaxed">
-                    {desc}
+                  <Num
+                    size={20}
+                    weight="bold"
+                    className={`mb-3 ${i === 0 ? "text-white" : "text-white/30"}`}
+                  />
+                  <p className="text-[13px] font-medium text-white/90">
+                    {label}
                   </p>
+                  <p className="text-[11px] text-white/30 mt-0.5">{sub}</p>
                 </div>
               ))}
             </div>
-          </section>
-        )}
 
-        {/* Upload Zone */}
-        {status === "idle" && (
-          <section className="mb-16">
+            {/* Upload zone */}
             <div
+              role="button"
+              tabIndex={0}
+              aria-label="Zone de d\u00e9p\u00f4t vid\u00e9o"
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);
               }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
-              className={`upload-zone rounded-2xl p-16 text-center cursor-pointer ${
-                dragOver ? "drag-over" : ""
-              } ${file ? "border-foreground/20 bg-card/40" : ""}`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ")
+                  document.getElementById("file-input")?.click();
+              }}
               onClick={() => document.getElementById("file-input")?.click()}
+              className={`group relative rounded-xl border transition-all duration-300 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${
+                dragOver
+                  ? "border-white/30 bg-white/[0.04]"
+                  : file
+                    ? "border-white/15 bg-white/[0.03]"
+                    : "border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.02]"
+              } ${file ? "p-5" : "p-14"}`}
             >
               <input
                 id="file-input"
@@ -244,18 +246,19 @@ export default function Home() {
                 accept="video/*"
                 onChange={handleFileSelect}
                 className="hidden"
+                aria-label="S\u00e9lectionner un fichier vid\u00e9o"
               />
 
               {file ? (
-                <div className="flex items-center justify-center gap-4">
-                  <FileVideo
-                    size={36}
-                    weight="regular"
-                    className="text-muted-foreground"
-                  />
-                  <div className="text-left">
-                    <p className="text-[14px] font-medium">{file.name}</p>
-                    <p className="text-[12px] text-muted-foreground">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center shrink-0">
+                    <FileVideo size={20} weight="regular" className="text-white/60" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-white/90 truncate">
+                      {file.name}
+                    </p>
+                    <p className="text-[11px] text-white/30">
                       {(file.size / (1024 * 1024)).toFixed(1)} Mo
                     </p>
                   </div>
@@ -264,202 +267,143 @@ export default function Home() {
                       e.stopPropagation();
                       setFile(null);
                     }}
-                    className="ml-4 p-1.5 rounded-lg hover:bg-muted transition-colors"
+                    aria-label="Retirer le fichier"
+                    className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
                   >
-                    <X size={14} className="text-muted-foreground" />
+                    <X size={14} className="text-white/40" />
                   </button>
                 </div>
               ) : (
-                <>
-                  <UploadSimple
-                    size={40}
-                    weight="regular"
-                    className="text-muted-foreground mx-auto mb-4"
-                  />
-                  <p className="text-[14px] font-medium mb-1">
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mx-auto mb-4 group-hover:bg-white/[0.06] transition-colors">
+                    <UploadSimple size={22} weight="regular" className="text-white/50" />
+                  </div>
+                  <p className="text-[14px] font-medium text-white/80 mb-1">
                     Glisse ta vid\u00e9o ici
                   </p>
-                  <p className="text-[12px] text-muted-foreground">
-                    ou clique pour parcourir &mdash; MP4, MOV, MKV, jusqu&apos;\u00e0
-                    2 Go
+                  <p className="text-[12px] text-white/30">
+                    ou clique pour parcourir
                   </p>
-                </>
+                </div>
               )}
             </div>
 
             {file && (
-              <div className="mt-6 flex justify-center">
+              <div className="mt-5 flex justify-center">
                 <Button
-                  size="lg"
                   onClick={handleAnalyze}
-                  className="rounded-xl px-8 gap-2 text-[13px] font-semibold h-11"
+                  className="h-10 px-6 rounded-lg gap-2 text-[13px] font-medium bg-white text-black hover:bg-white/90"
                 >
-                  <MagnifyingGlass size={16} weight="bold" />
-                  Analyser la vid\u00e9o
+                  <Play size={14} weight="fill" />
+                  Lancer l&apos;analyse
                 </Button>
               </div>
             )}
-          </section>
+          </>
         )}
 
-        {/* Analyzing */}
+        {/* ANALYZING */}
         {(status === "uploading" || status === "analyzing") && (
-          <section className="text-center py-24">
+          <div className="mt-32 text-center">
             <SpinnerGap
-              size={40}
+              size={32}
               weight="bold"
-              className="text-muted-foreground mx-auto mb-6 animate-spin"
+              className="text-white/40 mx-auto mb-5 animate-spin"
             />
-            <h2 className="text-lg font-semibold mb-2">
-              {status === "uploading"
-                ? "Upload en cours..."
-                : "Analyse en cours..."}
-            </h2>
-            <p className="text-[13px] text-muted-foreground mb-10 max-w-sm mx-auto leading-relaxed">
-              {progress < 40
-                ? "Extraction des frames de la vid\u00e9o..."
-                : progress < 70
-                  ? "OCR \u2014 lecture du texte dans chaque image..."
-                  : progress < 90
-                    ? "Claude Vision v\u00e9rifie chaque erreur..."
-                    : "Finalisation du rapport..."}
+            <p className="text-[14px] font-medium text-white/80 mb-1">
+              Analyse en cours
             </p>
-
-            <div className="max-w-xs mx-auto">
-              <div className="h-[3px] bg-muted rounded-full overflow-hidden">
+            <p className="text-[12px] text-white/30 mb-8">
+              {progress < 40
+                ? "Extraction des frames..."
+                : progress < 70
+                  ? "Lecture du texte..."
+                  : progress < 95
+                    ? "V\u00e9rification visuelle par l\u2019IA..."
+                    : "Finalisation..."}
+            </p>
+            <div className="max-w-[200px] mx-auto">
+              <div className="h-[2px] bg-white/[0.06] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-foreground rounded-full transition-all duration-1000 ease-out"
+                  className="h-full bg-white/60 rounded-full transition-all duration-1000"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground mt-2.5">
-                {progress}%
-              </p>
             </div>
-          </section>
+          </div>
         )}
 
-        {/* Results */}
+        {/* RESULTS */}
         {status === "done" && result && (
-          <section>
-            <div className="flex items-start justify-between mb-8">
+          <div className="mt-8">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-6">
               <div>
-                <h2 className="text-xl font-semibold tracking-tight">
-                  {result.total_errors === 0
-                    ? "Aucune erreur"
-                    : `${result.total_errors} erreur${result.total_errors > 1 ? "s" : ""} trouv\u00e9e${result.total_errors > 1 ? "s" : ""}`}
+                <h2 className="text-[20px] font-medium tracking-[-0.01em] text-white">
+                  {result.total_errors} erreur
+                  {result.total_errors > 1 ? "s" : ""} trouv\u00e9e
+                  {result.total_errors > 1 ? "s" : ""}
                 </h2>
-                <p className="text-[12px] text-muted-foreground mt-1">
-                  {file?.name} &middot; {result.video_info?.resolution} &middot;{" "}
-                  {result.video_info?.duration.toFixed(0)}s &middot; analys\u00e9 en{" "}
-                  {result.processing_time_seconds.toFixed(1)}s
+                <p className="text-[12px] text-white/30 mt-1">
+                  {file?.name} &middot;{" "}
+                  {result.video_info?.duration.toFixed(0)}s &middot;{" "}
+                  {result.processing_time_seconds.toFixed(1)}s d&apos;analyse
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <Button
-                  variant="secondary"
+                  variant="ghost"
                   size="sm"
-                  className="rounded-lg gap-1.5 text-[11px] h-8"
+                  className="h-8 px-3 rounded-lg text-[11px] text-white/50 hover:text-white/80 hover:bg-white/[0.04]"
                 >
-                  <DownloadSimple size={13} />
+                  <DownloadSimple size={13} className="mr-1" />
                   FCPXML
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="rounded-lg gap-1.5 text-[11px] h-8"
-                >
-                  <DownloadSimple size={13} />
-                  JSON
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={resetAnalysis}
-                  className="rounded-lg text-[11px] h-8"
+                  className="h-8 px-3 rounded-lg text-[11px] text-white/50 hover:text-white/80 hover:bg-white/[0.04]"
                 >
-                  Nouvelle analyse
+                  <DownloadSimple size={13} className="mr-1" />
+                  JSON
                 </Button>
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 mb-8">
-              {[
-                {
-                  label: "Haute confiance",
-                  value: result.high_confidence_errors,
-                  color: "text-[var(--sc-error)]",
-                },
-                {
-                  label: "\u00c0 v\u00e9rifier",
-                  value: result.medium_confidence_errors,
-                  color: "text-[var(--sc-warning)]",
-                },
-                {
-                  label: "Faux positifs",
-                  value: 0,
-                  color: "text-[var(--sc-success)]",
-                },
-              ].map(({ label, value, color }) => (
-                <div
-                  key={label}
-                  className="p-4 rounded-xl border border-border/40 text-center"
-                >
-                  <p className={`text-2xl font-semibold ${color}`}>{value}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {label}
-                  </p>
-                </div>
-              ))}
-            </div>
-
             {/* Error list */}
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {result.errors.map((error, i) => (
                 <div
                   key={i}
-                  className="group p-4 rounded-xl border border-border/40 hover:border-border/80 transition-colors"
+                  className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.03] transition-colors"
                 >
-                  <div className="flex items-start gap-4">
-                    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-[11px] font-mono mt-0.5">
-                      <Timer size={11} />
+                  <div className="flex items-start gap-3">
+                    {/* Timecode */}
+                    <span className="shrink-0 mt-0.5 text-[11px] font-mono text-white/30 bg-white/[0.04] px-2 py-0.5 rounded-md">
                       {error.timecode}
                     </span>
 
+                    {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[var(--sc-error)] font-semibold text-[13px] line-through decoration-1">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-red-400 font-medium text-[13px] line-through decoration-red-400/40">
                           {error.word}
                         </span>
-                        <ArrowRight
-                          size={12}
-                          className="text-muted-foreground"
-                        />
-                        <span className="text-[var(--sc-success)] font-semibold text-[13px]">
+                        <ArrowRight size={12} className="text-white/20" />
+                        <span className="text-emerald-400 font-medium text-[13px]">
                           {error.correction}
                         </span>
-                        <span className="ml-1.5 text-[9px] uppercase tracking-widest text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          {error.type}
-                        </span>
                       </div>
-                      <p className="text-[12px] text-muted-foreground leading-relaxed">
+                      <p className="text-[12px] text-white/40 leading-relaxed">
                         {error.explanation}
                       </p>
-                      {error.context && (
-                        <p className="text-[11px] text-muted-foreground/50 mt-1">
-                          \u00ab {error.context} \u00bb
-                        </p>
-                      )}
+                      <p className="text-[11px] text-white/20 mt-1">
+                        &laquo; {error.context} &raquo;
+                      </p>
                     </div>
 
-                    <span
-                      className={`shrink-0 text-[13px] font-semibold ${
-                        error.confidence >= 90
-                          ? "text-[var(--sc-success)]"
-                          : "text-[var(--sc-warning)]"
-                      }`}
-                    >
+                    {/* Confidence */}
+                    <span className="shrink-0 text-[12px] font-medium text-emerald-400/80">
                       {error.confidence}%
                     </span>
                   </div>
@@ -470,57 +414,45 @@ export default function Home() {
             {result.total_errors === 0 && (
               <div className="text-center py-20">
                 <CheckCircle
-                  size={56}
+                  size={48}
                   weight="regular"
-                  className="text-[var(--sc-success)] mx-auto mb-4"
+                  className="text-emerald-400 mx-auto mb-4"
                 />
-                <h3 className="text-lg font-semibold mb-1.5">
-                  Aucune erreur d\u00e9tect\u00e9e
-                </h3>
-                <p className="text-[13px] text-muted-foreground">
-                  Tous les textes de ta vid\u00e9o sont corrects.
+                <p className="text-[15px] font-medium text-white/80">
+                  Aucune erreur
+                </p>
+                <p className="text-[12px] text-white/30 mt-1">
+                  Tous les textes sont corrects.
                 </p>
               </div>
             )}
-          </section>
+          </div>
         )}
 
-        {/* Error state */}
+        {/* ERROR */}
         {status === "error" && (
-          <section className="text-center py-24">
+          <div className="mt-32 text-center">
             <Warning
-              size={40}
+              size={32}
               weight="regular"
-              className="text-[var(--sc-error)] mx-auto mb-4"
+              className="text-red-400 mx-auto mb-4"
             />
-            <h2 className="text-lg font-semibold mb-2">
-              Erreur lors de l&apos;analyse
-            </h2>
-            <p className="text-[13px] text-muted-foreground mb-6">
+            <p className="text-[14px] font-medium text-white/80 mb-1">
+              Erreur
+            </p>
+            <p className="text-[12px] text-white/30 mb-6">
               R\u00e9essaye ou contacte le support.
             </p>
             <Button
-              variant="secondary"
-              onClick={resetAnalysis}
-              className="rounded-xl"
+              variant="ghost"
+              onClick={reset}
+              className="rounded-lg text-[12px] text-white/50 hover:text-white"
             >
               R\u00e9essayer
             </Button>
-          </section>
+          </div>
         )}
       </main>
-
-      <footer className="border-t border-border/30 py-6">
-        <div className="mx-auto max-w-5xl px-6 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
-            <TextAa size={14} weight="bold" />
-            SpellCut
-          </div>
-          <p className="text-[11px] text-muted-foreground">
-            Propuls\u00e9 par Claude Vision
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }
