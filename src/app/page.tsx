@@ -83,6 +83,7 @@ export default function Home() {
   const [dragOver, setDragOver] = useState(false);
   const [progress, setProgress] = useState(0);
   const [activeError, setActiveError] = useState<number | null>(null);
+  const [currentStep, setCurrentStep] = useState<string>("");
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -157,8 +158,9 @@ export default function Home() {
 
         const job = await pollRes.json();
 
-        // Update progress from backend
+        // Update progress and step from backend
         if (job.progress) setProgress(Math.max(job.progress, 15));
+        if (job.step) setCurrentStep(job.step);
 
         if (job.status === "done" && job.result) {
           setResult(job.result);
@@ -427,13 +429,11 @@ export default function Home() {
               Analyse en cours
             </p>
             <p className="text-[13px] text-[#ccc] mb-10">
-              {progress < 40
-                ? "Extraction des frames..."
-                : progress < 70
-                  ? "Lecture du texte par OCR..."
-                  : progress < 95
-                    ? "V\u00e9rification visuelle par l\u2019IA..."
-                    : "Finalisation..."}
+              {currentStep
+                ? `${currentStep}...`
+                : status === "uploading"
+                  ? "Envoi de la vid\u00e9o..."
+                  : "D\u00e9marrage de l\u2019analyse..."}
             </p>
             <div className="max-w-[240px] mx-auto">
               <div className="progress-bar-track">
