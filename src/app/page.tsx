@@ -118,69 +118,48 @@ export default function Home() {
     []
   );
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
   const handleAnalyze = async () => {
     if (!file) return;
     setStatus("uploading");
-    setProgress(10);
-    setStatus("analyzing");
+    setProgress(5);
 
-    // Simulated analysis with GSAP-smoothed progress
-    for (const s of [
-      { p: 25, d: 800 },
-      { p: 50, d: 2500 },
-      { p: 75, d: 2500 },
-      { p: 90, d: 2000 },
-      { p: 98, d: 1500 },
-    ]) {
-      await new Promise((r) => setTimeout(r, s.d));
-      setProgress(s.p);
+    try {
+      // Upload video to backend API
+      const formData = new FormData();
+      formData.append("video", file);
+
+      setStatus("analyzing");
+
+      // Fake progress while waiting for API (real progress would need SSE/websocket)
+      const progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 8;
+        });
+      }, 2000);
+
+      const response = await fetch(`${API_URL}/analyze`, {
+        method: "POST",
+        body: formData,
+      });
+
+      clearInterval(progressInterval);
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ detail: "Unknown error" }));
+        throw new Error(err.detail || `HTTP ${response.status}`);
+      }
+
+      const data: AnalysisResult = await response.json();
+      setResult(data);
+      setProgress(100);
+      setStatus("done");
+    } catch (err) {
+      console.error("Analysis failed:", err);
+      setStatus("error");
     }
-
-    setResult({
-      total_errors: 3,
-      high_confidence_errors: 3,
-      medium_confidence_errors: 0,
-      processing_time_seconds: 12.4,
-      video_info: { duration: 62.2, resolution: "1920x1080" },
-      errors: [
-        {
-          timecode: "00:13",
-          seconds: 13,
-          word: "fond",
-          correction: "fonds",
-          type: "orthographe",
-          confidence: 99,
-          confidence_level: "high",
-          explanation:
-            "En finance, on \u00e9crit \u00ab fonds \u00bb (portefeuille), pas \u00ab fond \u00bb.",
-          context: "G\u00e9rant de fond \u00e9mergent",
-        },
-        {
-          timecode: "00:36",
-          seconds: 36,
-          word: "EMERGENTS",
-          correction: "\u00c9MERGENTS",
-          type: "accent",
-          confidence: 100,
-          confidence_level: "high",
-          explanation: "Accent obligatoire sur les majuscules.",
-          context: "CARMIGNAC EMERGENTS",
-        },
-        {
-          timecode: "00:42",
-          seconds: 42,
-          word: "premiere",
-          correction: "premi\u00e8re",
-          type: "accent",
-          confidence: 99,
-          confidence_level: "high",
-          explanation: "Accent grave obligatoire.",
-          context: "Aujourd\u2019hui la premiere question",
-        },
-      ],
-    });
-    setProgress(100);
-    setStatus("done");
   };
 
   const reset = () => {
