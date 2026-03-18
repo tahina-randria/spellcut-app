@@ -84,6 +84,7 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [activeError, setActiveError] = useState<number | null>(null);
   const [currentStep, setCurrentStep] = useState<string>("");
+  const [jobId, setJobId] = useState<string | null>(null);
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -142,6 +143,7 @@ export default function Home() {
       }
 
       const { job_id } = await uploadRes.json();
+      setJobId(job_id);
       setStatus("analyzing");
       setProgress(15);
 
@@ -200,8 +202,26 @@ export default function Home() {
     }
   };
 
-  const exportPremiere = () => {
+  const exportPremiere = async () => {
     if (!result) return;
+    // Try FCPXML from backend (best for Premiere Pro import)
+    if (jobId) {
+      try {
+        const res = await fetch(`${API_URL}/jobs/${jobId}/fcpxml`);
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `SpellCut_${file?.name?.replace(/\.[^.]+$/, "") || "video"}.fcpxml`;
+          a.click();
+          URL.revokeObjectURL(url);
+          return;
+        }
+      } catch {
+        // Fallback to client-side CSV
+      }
+    }
     const csv = generatePremiereCSV(result.errors);
     downloadFile(csv, "spellcut-markers.tsv", "text/tab-separated-values");
   };
