@@ -126,36 +126,56 @@ export default function Home() {
     setProgress(5);
 
     try {
-      // Upload video to backend API
+      // Step 1: Upload video → get job_id
       const formData = new FormData();
       formData.append("video", file);
 
-      setStatus("analyzing");
-
-      // Fake progress while waiting for API (real progress would need SSE/websocket)
-      const progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 8;
-        });
-      }, 2000);
-
-      const response = await fetch(`${API_URL}/analyze`, {
+      const uploadRes = await fetch(`${API_URL}/analyze`, {
         method: "POST",
         body: formData,
       });
 
-      clearInterval(progressInterval);
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ detail: "Unknown error" }));
-        throw new Error(err.detail || `HTTP ${response.status}`);
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({ detail: "Upload failed" }));
+        throw new Error(err.detail || `HTTP ${uploadRes.status}`);
       }
 
-      const data: AnalysisResult = await response.json();
-      setResult(data);
-      setProgress(100);
-      setStatus("done");
+      const { job_id } = await uploadRes.json();
+      setStatus("analyzing");
+      setProgress(15);
+
+      // Step 2: Poll job status until done
+      let attempts = 0;
+      const maxAttempts = 300; // 15 min max (3s * 300)
+
+      while (attempts < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 3000));
+        attempts++;
+
+        const pollRes = await fetch(`${API_URL}/jobs/${job_id}`);
+        if (!pollRes.ok) throw new Error("Failed to check job status");
+
+        const job = await pollRes.json();
+
+        // Update progress from backend
+        if (job.progress) setProgress(Math.max(job.progress, 15));
+
+        if (job.status === "done" && job.result) {
+          setResult(job.result);
+          setProgress(100);
+          setStatus("done");
+          return;
+        }
+
+        if (job.status === "error") {
+          throw new Error(job.error || "Analysis failed");
+        }
+
+        // Smooth progress simulation between polls
+        setProgress((prev) => Math.min(prev + 2, 90));
+      }
+
+      throw new Error("Analysis timed out after 15 minutes");
     } catch (err) {
       console.error("Analysis failed:", err);
       setStatus("error");
