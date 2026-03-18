@@ -1,29 +1,31 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
-  MagnifyingGlass,
   CheckCircle,
   UploadSimple,
   FileVideo,
   SpinnerGap,
   Warning,
   ArrowRight,
-  Timer,
-  TextAa,
   DownloadSimple,
   X,
-  NumberOne,
-  NumberTwo,
-  NumberThree,
   Play,
+  Cursor,
+  Eye,
+  Export,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+// GSAP available for future interactive animations
+// import gsap from "gsap";
+
+/* ──────────────────────────────── Types ──────────────────────────────── */
 
 type AnalysisStatus = "idle" | "uploading" | "analyzing" | "done" | "error";
 
 interface SpellError {
   timecode: string;
+  seconds: number;
   word: string;
   correction: string;
   type: string;
@@ -42,12 +44,64 @@ interface AnalysisResult {
   video_info?: { duration: number; resolution: string };
 }
 
+/* ────────────────────────── Premiere Pro Export ────────────────────────── */
+
+function generatePremiereCSV(errors: SpellError[]): string {
+  const header = "Marker Name\tDescription\tIn\tOut\tDuration\tMarker Type";
+  const rows = errors.map((e) => {
+    const tc = secondsToTimecode(e.seconds);
+    return `${e.word} → ${e.correction}\t${e.explanation}\t${tc}\t${tc}\t00:00:00:01\tComment`;
+  });
+  return [header, ...rows].join("\n");
+}
+
+function secondsToTimecode(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  const f = Math.floor((sec % 1) * 25);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}:${String(f).padStart(2, "0")}`;
+}
+
+function downloadFile(content: string, filename: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ──────────────────────────────── App ──────────────────────────────── */
+
 export default function Home() {
   const [status, setStatus] = useState<AnalysisStatus>("idle");
   const [file, setFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [activeError, setActiveError] = useState<number | null>(null);
+
+  // Refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Create video URL when file is selected
+  useEffect(() => {
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setVideoUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setVideoUrl(null);
+    }
+  }, [file]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -69,6 +123,8 @@ export default function Home() {
     setStatus("uploading");
     setProgress(10);
     setStatus("analyzing");
+
+    // Simulated analysis with GSAP-smoothed progress
     for (const s of [
       { p: 25, d: 800 },
       { p: 50, d: 2500 },
@@ -79,6 +135,7 @@ export default function Home() {
       await new Promise((r) => setTimeout(r, s.d));
       setProgress(s.p);
     }
+
     setResult({
       total_errors: 3,
       high_confidence_errors: 3,
@@ -88,6 +145,7 @@ export default function Home() {
       errors: [
         {
           timecode: "00:13",
+          seconds: 13,
           word: "fond",
           correction: "fonds",
           type: "orthographe",
@@ -98,17 +156,8 @@ export default function Home() {
           context: "G\u00e9rant de fond \u00e9mergent",
         },
         {
-          timecode: "00:42",
-          word: "premiere",
-          correction: "premi\u00e8re",
-          type: "accent",
-          confidence: 99,
-          confidence_level: "high",
-          explanation: "Accent grave obligatoire.",
-          context: "Aujourd\u2019hui la premiere question",
-        },
-        {
           timecode: "00:36",
+          seconds: 36,
           word: "EMERGENTS",
           correction: "\u00c9MERGENTS",
           type: "accent",
@@ -116,6 +165,17 @@ export default function Home() {
           confidence_level: "high",
           explanation: "Accent obligatoire sur les majuscules.",
           context: "CARMIGNAC EMERGENTS",
+        },
+        {
+          timecode: "00:42",
+          seconds: 42,
+          word: "premiere",
+          correction: "premi\u00e8re",
+          type: "accent",
+          confidence: 99,
+          confidence_level: "high",
+          explanation: "Accent grave obligatoire.",
+          context: "Aujourd\u2019hui la premiere question",
         },
       ],
     });
@@ -128,36 +188,66 @@ export default function Home() {
     setFile(null);
     setResult(null);
     setProgress(0);
+    setActiveError(null);
+  };
+
+  const seekToError = (error: SpellError, index: number) => {
+    setActiveError(index);
+    if (videoRef.current) {
+      videoRef.current.currentTime = error.seconds;
+      videoRef.current.play();
+    }
+  };
+
+  const exportPremiere = () => {
+    if (!result) return;
+    const csv = generatePremiereCSV(result.errors);
+    downloadFile(csv, "spellcut-markers.tsv", "text/tab-separated-values");
+  };
+
+  const exportJSON = () => {
+    if (!result) return;
+    downloadFile(
+      JSON.stringify(result, null, 2),
+      "spellcut-result.json",
+      "application/json"
+    );
   };
 
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Grain overlay */}
+      <div className="grain-overlay" />
+
+      {/* Ambient glow */}
       <div
-        className="pointer-events-none fixed inset-0 z-50 opacity-[0.03]"
+        className="pointer-events-none fixed top-[-150px] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[160px]"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "256px 256px",
+          background:
+            "radial-gradient(ellipse, oklch(1 0 0 / 5%) 0%, transparent 70%)",
         }}
       />
 
-      {/* Subtle radial glow */}
-      <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-white/[0.02] rounded-full blur-[120px]" />
-
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl">
+      {/* ── Nav ── */}
+      <nav
+        className="fixed top-0 left-0 right-0 z-40 glass-strong animate-fade-down"
+      >
         <div className="mx-auto max-w-3xl px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TextAa weight="bold" size={18} />
-            <span className="text-[14px] font-medium tracking-[-0.01em]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center">
+              <span className="text-[11px] font-bold text-black tracking-tight">
+                SC
+              </span>
+            </div>
+            <span className="text-[14px] font-semibold tracking-[-0.02em] text-white">
               SpellCut
             </span>
           </div>
           {status === "done" && (
             <button
               onClick={reset}
-              className="text-[12px] text-white/50 hover:text-white/80 transition-colors"
+              className="text-[12px] text-[#ccc] hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-white/30"
+              aria-label="Nouvelle analyse"
             >
               Nouvelle analyse
             </button>
@@ -165,294 +255,374 @@ export default function Home() {
         </div>
       </nav>
 
-      <main className="relative z-10 mx-auto max-w-3xl px-6 pt-24 pb-20">
-        {/* IDLE — Guide + Upload */}
+      <main className="relative z-10 mx-auto max-w-3xl px-6 pt-24 pb-12">
+        {/* ═══════════════ IDLE — Hero + Guide + Upload ═══════════════ */}
         {status === "idle" && (
           <>
-            {/* Hero — court et direct */}
-            <div className="mt-12 mb-16 text-center">
-              <h1 className="text-[32px] font-medium tracking-[-0.02em] leading-[1.2] text-white mb-3">
-                V\u00e9rifie l&apos;orthographe de ta vid\u00e9o
+            {/* Hero */}
+            <div className="mt-16 mb-14 text-center animate-fade-up delay-1">
+              <h1 className="text-[36px] font-semibold tracking-[-0.03em] leading-[1.15] text-white mb-4">
+                V&eacute;rifie l&apos;orthographe
+                <br />
+                de ta vid&eacute;o
               </h1>
-              <p className="text-[14px] text-white/40 max-w-md mx-auto">
-                Titres, sous-titres, lower thirds. Chaque texte est lu et
-                v\u00e9rifi\u00e9 directement depuis l&apos;image.
+              <p className="text-[15px] text-[#ccc] max-w-md mx-auto leading-relaxed">
+                Titres, sous-titres, lower thirds. Chaque texte est lu
+                directement depuis les pixels de ta vid&eacute;o.
               </p>
             </div>
 
-            {/* Guide — 3 \u00e9tapes visuelles */}
-            <div className="mb-12 grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-white/[0.06]">
+            {/* Guide — 3 steps */}
+            <div
+              className="mb-10 grid grid-cols-3 gap-4 animate-fade-up delay-2"
+            >
               {[
                 {
-                  num: NumberOne,
+                  icon: UploadSimple,
+                  step: "01",
                   label: "Drop ta vid\u00e9o",
-                  sub: "MP4, MOV, 4K",
+                  sub: "MP4, MOV, jusqu\u2019\u00e0 4K",
                 },
                 {
-                  num: NumberTwo,
-                  label: "Analyse automatique",
-                  sub: "IA lit chaque frame",
+                  icon: Eye,
+                  step: "02",
+                  label: "Analyse pixel par pixel",
+                  sub: "IA vision + OCR multi-moteur",
                 },
                 {
-                  num: NumberThree,
+                  icon: Export,
+                  step: "03",
                   label: "Erreurs + timecodes",
-                  sub: "Export DaVinci / FCP",
+                  sub: "Export Premiere Pro / JSON",
                 },
-              ].map(({ num: Num, label, sub }, i) => (
+              ].map(({ icon: Icon, step, label, sub }) => (
                 <div
-                  key={i}
-                  className={`p-5 bg-white/[0.02] ${i === 0 ? "bg-white/[0.04]" : ""}`}
+                  key={step}
+                  className="glass-card rounded-2xl p-5 group"
                 >
-                  <Num
-                    size={20}
-                    weight="bold"
-                    className={`mb-3 ${i === 0 ? "text-white" : "text-white/30"}`}
-                  />
-                  <p className="text-[13px] font-medium text-white/90">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-white/[0.08] flex items-center justify-center">
+                      <Icon
+                        size={16}
+                        weight="regular"
+                        className="text-white"
+                      />
+                    </div>
+                    <span className="text-[11px] font-medium text-[#bbb] tracking-wider uppercase">
+                      {step}
+                    </span>
+                  </div>
+                  <p className="text-[13px] font-medium text-white mb-0.5">
                     {label}
                   </p>
-                  <p className="text-[11px] text-white/30 mt-0.5">{sub}</p>
+                  <p className="text-[12px] text-[#ccc]">{sub}</p>
                 </div>
               ))}
             </div>
 
-            {/* Upload zone */}
-            <div
-              role="button"
-              tabIndex={0}
-              aria-label="Zone de d\u00e9p\u00f4t vid\u00e9o"
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOver(true);
-              }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ")
-                  document.getElementById("file-input")?.click();
-              }}
-              onClick={() => document.getElementById("file-input")?.click()}
-              className={`group relative rounded-xl border transition-all duration-300 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${
-                dragOver
-                  ? "border-white/30 bg-white/[0.04]"
-                  : file
-                    ? "border-white/15 bg-white/[0.03]"
-                    : "border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.02]"
-              } ${file ? "p-5" : "p-14"}`}
-            >
-              <input
-                id="file-input"
-                type="file"
-                accept="video/*"
-                onChange={handleFileSelect}
-                className="hidden"
-                aria-label="S\u00e9lectionner un fichier vid\u00e9o"
-              />
+            {/* Upload zone — glassmorphism */}
+            <div className="animate-fade-up delay-3">
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label="Zone de d\u00e9p\u00f4t vid\u00e9o — glisse un fichier ou clique pour parcourir"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ")
+                    document.getElementById("file-input")?.click();
+                }}
+                onClick={() =>
+                  document.getElementById("file-input")?.click()
+                }
+                className={`group relative rounded-2xl cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] glass-upload ${
+                  dragOver ? "drag-over" : ""
+                } ${file ? "p-5" : "py-16 px-8"}`}
+              >
+                <input
+                  id="file-input"
+                  type="file"
+                  accept="video/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  aria-label="S\u00e9lectionner un fichier vid\u00e9o"
+                />
 
-              {file ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center shrink-0">
-                    <FileVideo size={20} weight="regular" className="text-white/60" />
+                {file ? (
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-white/[0.08] flex items-center justify-center shrink-0">
+                      <FileVideo
+                        size={22}
+                        weight="regular"
+                        className="text-white"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-medium text-white truncate">
+                        {file.name}
+                      </p>
+                      <p className="text-[12px] text-[#ccc]">
+                        {(file.size / (1024 * 1024)).toFixed(1)} Mo
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFile(null);
+                      }}
+                      aria-label="Retirer le fichier"
+                      className="p-2 rounded-xl hover:bg-white/[0.08] transition-colors"
+                    >
+                      <X size={16} className="text-[#ccc]" />
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-white/90 truncate">
-                      {file.name}
+                ) : (
+                  <div className="text-center">
+                    <div className="w-14 h-14 rounded-2xl glass flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
+                      <UploadSimple
+                        size={24}
+                        weight="regular"
+                        className="text-white"
+                      />
+                    </div>
+                    <p className="text-[15px] font-medium text-white mb-1.5">
+                      Glisse ta vid&eacute;o ici
                     </p>
-                    <p className="text-[11px] text-white/30">
-                      {(file.size / (1024 * 1024)).toFixed(1)} Mo
+                    <p className="text-[13px] text-[#ccc]">
+                      ou clique pour parcourir &middot; MP4, MOV
                     </p>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFile(null);
-                    }}
-                    aria-label="Retirer le fichier"
-                    className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
+                )}
+              </div>
+
+              {file && (
+                <div className="mt-6 flex justify-center">
+                  <Button
+                    onClick={handleAnalyze}
+                    className="h-11 px-7 rounded-xl gap-2.5 text-[13px] font-semibold bg-white text-black hover:bg-white/90 transition-all active:scale-[0.98]"
                   >
-                    <X size={14} className="text-white/40" />
-                  </button>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mx-auto mb-4 group-hover:bg-white/[0.06] transition-colors">
-                    <UploadSimple size={22} weight="regular" className="text-white/50" />
-                  </div>
-                  <p className="text-[14px] font-medium text-white/80 mb-1">
-                    Glisse ta vid\u00e9o ici
-                  </p>
-                  <p className="text-[12px] text-white/30">
-                    ou clique pour parcourir
-                  </p>
+                    <Play size={14} weight="fill" />
+                    Lancer l&apos;analyse
+                  </Button>
                 </div>
               )}
             </div>
-
-            {file && (
-              <div className="mt-5 flex justify-center">
-                <Button
-                  onClick={handleAnalyze}
-                  className="h-10 px-6 rounded-lg gap-2 text-[13px] font-medium bg-white text-black hover:bg-white/90"
-                >
-                  <Play size={14} weight="fill" />
-                  Lancer l&apos;analyse
-                </Button>
-              </div>
-            )}
           </>
         )}
 
-        {/* ANALYZING */}
+        {/* ═══════════════ ANALYZING ═══════════════ */}
         {(status === "uploading" || status === "analyzing") && (
           <div className="mt-32 text-center">
-            <SpinnerGap
-              size={32}
-              weight="bold"
-              className="text-white/40 mx-auto mb-5 animate-spin"
-            />
-            <p className="text-[14px] font-medium text-white/80 mb-1">
+            <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-6">
+              <SpinnerGap
+                size={28}
+                weight="bold"
+                className="text-white animate-spin"
+              />
+            </div>
+            <p className="text-[16px] font-medium text-white mb-2">
               Analyse en cours
             </p>
-            <p className="text-[12px] text-white/30 mb-8">
+            <p className="text-[13px] text-[#ccc] mb-10">
               {progress < 40
                 ? "Extraction des frames..."
                 : progress < 70
-                  ? "Lecture du texte..."
+                  ? "Lecture du texte par OCR..."
                   : progress < 95
                     ? "V\u00e9rification visuelle par l\u2019IA..."
                     : "Finalisation..."}
             </p>
-            <div className="max-w-[200px] mx-auto">
-              <div className="h-[2px] bg-white/[0.06] rounded-full overflow-hidden">
+            <div className="max-w-[240px] mx-auto">
+              <div className="progress-bar-track">
                 <div
-                  className="h-full bg-white/60 rounded-full transition-all duration-1000"
+                  className="progress-bar-fill"
                   style={{ width: `${progress}%` }}
                 />
               </div>
+              <p className="text-[11px] text-[#bbb] mt-3 font-mono">
+                {progress}%
+              </p>
             </div>
           </div>
         )}
 
-        {/* RESULTS */}
+        {/* ═══════════════ RESULTS ═══════════════ */}
         {status === "done" && result && (
-          <div className="mt-8">
+          <div className="mt-6 animate-fade-up delay-1">
+            {/* Video player preview */}
+            {videoUrl && (
+              <div className="mb-8 glass-card rounded-2xl overflow-hidden">
+                <div className="video-player-container">
+                  <video
+                    ref={videoRef}
+                    src={videoUrl}
+                    className="w-full"
+                    controls
+                    playsInline
+                    aria-label="Pr\u00e9visualisation de la vid\u00e9o analys\u00e9e"
+                  />
+                </div>
+                <div className="px-4 py-3 flex items-center justify-between border-t border-white/[0.06]">
+                  <p className="text-[12px] text-[#ccc]">
+                    Clique sur une erreur pour aller au timecode
+                  </p>
+                  <Cursor size={14} className="text-[#bbb]" />
+                </div>
+              </div>
+            )}
+
             {/* Header */}
             <div className="flex items-start justify-between mb-6">
               <div>
-                <h2 className="text-[20px] font-medium tracking-[-0.01em] text-white">
+                <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-white">
                   {result.total_errors} erreur
-                  {result.total_errors > 1 ? "s" : ""} trouv\u00e9e
+                  {result.total_errors > 1 ? "s" : ""} trouv&eacute;e
                   {result.total_errors > 1 ? "s" : ""}
                 </h2>
-                <p className="text-[12px] text-white/30 mt-1">
+                <p className="text-[12px] text-[#ccc] mt-1">
                   {file?.name} &middot;{" "}
                   {result.video_info?.duration.toFixed(0)}s &middot;{" "}
                   {result.processing_time_seconds.toFixed(1)}s d&apos;analyse
                 </p>
               </div>
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-3 rounded-lg text-[11px] text-white/50 hover:text-white/80 hover:bg-white/[0.04]"
+                  onClick={exportPremiere}
+                  className="h-9 px-4 rounded-xl text-[12px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1.5"
+                  aria-label="Exporter les markers pour Premiere Pro"
                 >
-                  <DownloadSimple size={13} className="mr-1" />
-                  FCPXML
+                  <DownloadSimple size={14} />
+                  Premiere Pro
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-3 rounded-lg text-[11px] text-white/50 hover:text-white/80 hover:bg-white/[0.04]"
+                  onClick={exportJSON}
+                  className="h-9 px-4 rounded-xl text-[12px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1.5"
+                  aria-label="Exporter en JSON"
                 >
-                  <DownloadSimple size={13} className="mr-1" />
+                  <DownloadSimple size={14} />
                   JSON
                 </Button>
               </div>
             </div>
 
             {/* Error list */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {result.errors.map((error, i) => (
-                <div
+                <button
                   key={i}
-                  className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.03] transition-colors"
+                  onClick={() => seekToError(error, i)}
+                  className={`error-card w-full text-left p-5 rounded-2xl glass-card transition-all duration-200 cursor-pointer hover:scale-[1.01] focus-visible:ring-2 focus-visible:ring-white/30 ${
+                    activeError === i
+                      ? "ring-1 ring-white/20"
+                      : ""
+                  }`}
+                  aria-label={`Erreur \u00e0 ${error.timecode}: ${error.word} devrait \u00eatre ${error.correction}`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     {/* Timecode */}
-                    <span className="shrink-0 mt-0.5 text-[11px] font-mono text-white/30 bg-white/[0.04] px-2 py-0.5 rounded-md">
+                    <span className="shrink-0 mt-0.5 text-[11px] font-mono text-white bg-white/[0.08] px-2.5 py-1 rounded-lg">
                       {error.timecode}
                     </span>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-red-400 font-medium text-[13px] line-through decoration-red-400/40">
+                      <div className="flex items-center gap-2.5 mb-2">
+                        <span className="text-[#ff6b6b] font-semibold text-[14px] line-through decoration-[#ff6b6b]/40">
                           {error.word}
                         </span>
-                        <ArrowRight size={12} className="text-white/20" />
-                        <span className="text-emerald-400 font-medium text-[13px]">
+                        <ArrowRight
+                          size={12}
+                          weight="bold"
+                          className="text-[#aaa]"
+                        />
+                        <span className="text-[#51cf66] font-semibold text-[14px]">
                           {error.correction}
                         </span>
                       </div>
-                      <p className="text-[12px] text-white/40 leading-relaxed">
+                      <p className="text-[13px] text-[#aaa] leading-relaxed">
                         {error.explanation}
                       </p>
-                      <p className="text-[11px] text-white/20 mt-1">
-                        &laquo; {error.context} &raquo;
+                      <p className="text-[12px] text-[#bbb] mt-1.5">
+                        &laquo;&nbsp;{error.context}&nbsp;&raquo;
                       </p>
                     </div>
 
                     {/* Confidence */}
-                    <span className="shrink-0 text-[12px] font-medium text-emerald-400/80">
-                      {error.confidence}%
-                    </span>
+                    <div className="shrink-0 flex flex-col items-end gap-1">
+                      <span className="text-[13px] font-semibold text-[#51cf66]">
+                        {error.confidence}%
+                      </span>
+                      <span className="text-[10px] text-[#bbb] uppercase tracking-wider">
+                        {error.type}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
 
             {result.total_errors === 0 && (
-              <div className="text-center py-20">
-                <CheckCircle
-                  size={48}
-                  weight="regular"
-                  className="text-emerald-400 mx-auto mb-4"
-                />
-                <p className="text-[15px] font-medium text-white/80">
-                  Aucune erreur
+              <div className="text-center py-24">
+                <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-5">
+                  <CheckCircle
+                    size={32}
+                    weight="regular"
+                    className="text-[#51cf66]"
+                  />
+                </div>
+                <p className="text-[16px] font-medium text-white">
+                  Aucune erreur d&eacute;tect&eacute;e
                 </p>
-                <p className="text-[12px] text-white/30 mt-1">
-                  Tous les textes sont corrects.
+                <p className="text-[13px] text-[#ccc] mt-2">
+                  Tous les textes de ta vid&eacute;o sont corrects.
                 </p>
               </div>
             )}
           </div>
         )}
 
-        {/* ERROR */}
+        {/* ═══════════════ ERROR ═══════════════ */}
         {status === "error" && (
           <div className="mt-32 text-center">
-            <Warning
-              size={32}
-              weight="regular"
-              className="text-red-400 mx-auto mb-4"
-            />
-            <p className="text-[14px] font-medium text-white/80 mb-1">
+            <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-6">
+              <Warning size={28} weight="regular" className="text-[#ff6b6b]" />
+            </div>
+            <p className="text-[16px] font-medium text-white mb-2">
               Erreur
             </p>
-            <p className="text-[12px] text-white/30 mb-6">
-              R\u00e9essaye ou contacte le support.
+            <p className="text-[13px] text-[#ccc] mb-8">
+              V&eacute;rifie ta connexion et r&eacute;essaie.
             </p>
             <Button
               variant="ghost"
               onClick={reset}
-              className="rounded-lg text-[12px] text-white/50 hover:text-white"
+              className="rounded-xl text-[13px] text-[#ccc] hover:text-white"
             >
-              R\u00e9essayer
+              R&eacute;essayer
             </Button>
           </div>
         )}
       </main>
+
+      {/* ── Footer ── */}
+      <footer className="relative z-10 border-t border-white/[0.06] py-6">
+        <div className="mx-auto max-w-3xl px-6 flex items-center justify-between">
+          <p className="text-[11px] text-[#aaa]">
+            &copy; {new Date().getFullYear()} SpellCut
+          </p>
+          <p className="text-[11px] text-[#aaa]">
+            Par Tahina Randrianandraina
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
