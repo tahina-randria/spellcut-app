@@ -505,6 +505,28 @@ export default function Home() {
 
               {file && (
                 <div className="mt-6 flex flex-col items-center gap-4">
+                  {/* Netflix toggle */}
+                  <button
+                    onClick={() => setNetflixMode(!netflixMode)}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl glass-card transition-all hover:scale-[1.01]"
+                    aria-label="V\u00e9rifier les r\u00e8gles de sous-titrage"
+                  >
+                    <div
+                      className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${
+                        netflixMode ? "bg-[#e50914]" : "bg-white/[0.12]"
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
+                          netflixMode ? "translate-x-4" : "translate-x-0.5"
+                        }`}
+                      />
+                    </div>
+                    <span className="text-[13px] text-[#ccc]">
+                      V&eacute;rifier le sous-titrage
+                    </span>
+                  </button>
+
                   <Button
                     onClick={handleAnalyze}
                     className="h-11 px-7 rounded-xl gap-2.5 text-[13px] font-semibold bg-white text-black hover:bg-white/90 transition-all active:scale-[0.98]"
@@ -512,57 +534,6 @@ export default function Home() {
                     <Play size={14} weight="fill" />
                     Lancer l&apos;analyse
                   </Button>
-
-                  {/* Options dropdown */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowOptions(!showOptions)}
-                      className="flex items-center gap-1.5 text-[12px] text-[#888] hover:text-[#ccc] transition-colors"
-                    >
-                      <GearSix size={13} />
-                      Options
-                      <CaretDown
-                        size={10}
-                        className={`transition-transform duration-200 ${
-                          showOptions ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-
-                    {showOptions && (
-                      <div className="absolute top-8 left-1/2 -translate-x-1/2 w-64 glass-card rounded-xl p-3 border border-white/[0.08] z-10">
-                        <button
-                          onClick={() => setNetflixMode(!netflixMode)}
-                          className="flex items-center justify-between w-full px-2 py-2 rounded-lg hover:bg-white/[0.04] transition-colors"
-                        >
-                          <div className="text-left">
-                            <p className="text-[12px] text-[#ccc]">
-                              <span className="text-[#e50914] font-semibold">Netflix</span>{" "}
-                              R&egrave;gles de sous-titrage
-                            </p>
-                            <p className="text-[10px] text-[#666]">
-                              42 car/ligne, 2 lignes max, vitesse de lecture, dur&eacute;e
-                            </p>
-                          </div>
-                          <div
-                            className={`w-8 h-[18px] rounded-full transition-colors duration-200 relative shrink-0 ml-3 ${
-                              netflixMode
-                                ? "bg-[#e50914]"
-                                : "bg-white/[0.12]"
-                            }`}
-                          >
-                            <div
-                              className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white transition-transform duration-200 ${
-                                netflixMode
-                                  ? "translate-x-[14px]"
-                                  : "translate-x-[2px]"
-                              }`}
-                            />
-                          </div>
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
             </div>
@@ -725,9 +696,16 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Error list */}
+            {/* Error list — Orthographe */}
+            {result.errors.filter(e => !["ligne_trop_longue", "trop_de_lignes", "vitesse_lecture", "duree_min", "duree_max"].includes(e.type)).length > 0 && (
+              <h3 className="text-[14px] font-medium text-white mb-3">
+                Orthographe &amp; grammaire
+              </h3>
+            )}
             <div className="space-y-3">
               {result.errors.map((error, i) => {
+                // Skip Netflix errors in this section
+                if (["ligne_trop_longue", "trop_de_lignes", "vitesse_lecture", "duree_min", "duree_max"].includes(error.type)) return null;
                 if (dismissedErrors.has(i)) return null;
                 return (
                   <div
@@ -816,6 +794,45 @@ export default function Home() {
                 );
               })}
             </div>
+
+            {/* Netflix / Subtitle rules section */}
+            {result.errors.filter(e => ["ligne_trop_longue", "trop_de_lignes", "vitesse_lecture", "duree_min", "duree_max"].includes(e.type)).length > 0 && (
+              <>
+                <h3 className="text-[14px] font-medium text-white mt-8 mb-3 flex items-center gap-2">
+                  <span className="text-[#e50914]">&#9632;</span>
+                  R&egrave;gles de sous-titrage
+                  <span className="text-[10px] text-[#888] font-normal ml-1">
+                    ({result.errors.filter(e => ["ligne_trop_longue", "trop_de_lignes", "vitesse_lecture", "duree_min", "duree_max"].includes(e.type)).length})
+                  </span>
+                </h3>
+                <div className="space-y-2 mb-6">
+                  {result.errors.map((error, i) => {
+                    if (!["ligne_trop_longue", "trop_de_lignes", "vitesse_lecture", "duree_min", "duree_max"].includes(error.type)) return null;
+                    if (dismissedErrors.has(i)) return null;
+                    return (
+                      <div
+                        key={`nf-${i}`}
+                        className="relative group flex items-center gap-3 px-4 py-3 rounded-xl glass-card border-l-2 border-[#e50914]/50"
+                      >
+                        <span className="shrink-0 text-[11px] font-mono text-[#e50914] bg-[#e50914]/10 px-2 py-0.5 rounded">
+                          {error.timecode}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] text-[#ccc]">{error.explanation}</p>
+                        </div>
+                        <button
+                          onClick={() => dismissError(i, error)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/[0.06]"
+                          title="Ignorer"
+                        >
+                          <X size={12} className="text-[#666]" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             {result.total_errors === 0 && (
               <div className="text-center py-24">
