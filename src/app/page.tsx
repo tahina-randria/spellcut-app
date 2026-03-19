@@ -326,40 +326,10 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Animated gradient background */}
-      <div className="bg-gradient-animated" />
+      {/* Dot matrix background */}
+      <div className="bg-dot-matrix" />
 
-      {/* Grain overlay */}
-      <div className="grain-overlay" />
-
-      {/* ── Nav ── */}
-      <nav
-        className="fixed top-0 left-0 right-0 z-40 glass-strong animate-fade-down"
-      >
-        <div className="mx-auto max-w-3xl px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center">
-              <span className="text-[11px] font-bold text-black tracking-tight">
-                SC
-              </span>
-            </div>
-            <span className="text-[14px] font-semibold tracking-[-0.02em] text-white">
-              SpellCut
-            </span>
-          </div>
-          {status === "done" && (
-            <button
-              onClick={reset}
-              className="text-[12px] text-[#d1d5db] hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-white/30"
-              aria-label="Nouvelle analyse"
-            >
-              Nouvelle analyse
-            </button>
-          )}
-        </div>
-      </nav>
-
-      <main className="relative z-10 mx-auto max-w-3xl px-6 pt-24 pb-12">
+      <main className="relative z-10 mx-auto max-w-2xl px-6 pt-16 pb-12">
         {/* ═══════════════ IDLE — Hero + Guide + Upload ═══════════════ */}
         {status === "idle" && (
           <>
@@ -671,6 +641,14 @@ export default function Home() {
                 >
                   <DownloadSimple size={12} />
                   JSON
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={reset}
+                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1 ml-auto"
+                >
+                  Nouvelle analyse
                 </Button>
               </div>
             </div>
