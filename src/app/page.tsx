@@ -21,7 +21,7 @@ import {
   CaretDown,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import DotMatrix from "@/components/DotMatrix";
+import BlobGradient from "@/components/BlobGradient";
 import SmoothScroll from "@/components/SmoothScroll";
 
 /* ──────────────────────────────── Types ──────────────────────────────── */
@@ -325,12 +325,12 @@ export default function Home() {
   };
 
   return (
-    <div className="relative h-screen overflow-hidden flex flex-col">
-      {/* Pixel background */}
-      <DotMatrix />
+    <div className="relative min-h-screen">
+      {/* Animated blob gradient + grain */}
+      <BlobGradient />
       <SmoothScroll />
 
-      <main className="relative z-10 mx-auto max-w-2xl px-6 flex-1 flex flex-col justify-center overflow-y-auto">
+      <main className="relative z-10 mx-auto max-w-2xl px-6">
         {/* ═══════════════ IDLE — Hero + Guide + Upload ═══════════════ */}
         {status === "idle" && (
           <>
