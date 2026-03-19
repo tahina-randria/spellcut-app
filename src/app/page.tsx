@@ -17,6 +17,8 @@ import {
   ThumbsDown,
   FileCsv,
   Subtitles,
+  GearSix,
+  CaretDown,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 // GSAP available for future interactive animations
@@ -91,6 +93,8 @@ export default function Home() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [netflixMode, setNetflixMode] = useState(false);
   const [dismissedErrors, setDismissedErrors] = useState<Set<number>>(new Set());
+  const [showOptions, setShowOptions] = useState(false);
+  const [eta, setEta] = useState<string>("");
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -171,6 +175,21 @@ export default function Home() {
         if (job.progress) setProgress(Math.max(job.progress, 15));
         if (job.step) setCurrentStep(job.step);
 
+        // Estimate remaining time based on progress
+        const pct = job.progress || 0;
+        if (pct > 10 && pct < 95) {
+          const elapsed = attempts * 3;
+          const total = (elapsed / pct) * 100;
+          const remaining = Math.max(0, Math.round(total - elapsed));
+          if (remaining > 60) {
+            setEta(`~${Math.round(remaining / 60)} min restantes`);
+          } else if (remaining > 5) {
+            setEta(`~${remaining}s restantes`);
+          } else {
+            setEta("Presque termin\u00e9...");
+          }
+        }
+
         if (job.status === "done" && job.result) {
           setResult(job.result);
           setProgress(100);
@@ -182,8 +201,13 @@ export default function Home() {
           throw new Error(job.error || "Analysis failed");
         }
 
-        // Smooth progress simulation between polls
-        setProgress((prev) => Math.min(prev + 2, 90));
+        // Smooth progress simulation between polls (increment by small steps)
+        setProgress((prev) => {
+          const backendPct = job.progress || 0;
+          // If backend is ahead, jump to it; otherwise creep up slowly
+          if (backendPct > prev) return backendPct;
+          return Math.min(prev + 1, 90);
+        });
       }
 
       throw new Error("Analysis timed out after 15 minutes");
@@ -481,31 +505,6 @@ export default function Home() {
 
               {file && (
                 <div className="mt-6 flex flex-col items-center gap-4">
-                  {/* Netflix mode toggle */}
-                  <button
-                    onClick={() => setNetflixMode(!netflixMode)}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl glass-card transition-all hover:scale-[1.01]"
-                    aria-label="Activer le mode Netflix"
-                  >
-                    <div
-                      className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${
-                        netflixMode ? "bg-[#e50914]" : "bg-white/[0.12]"
-                      }`}
-                    >
-                      <div
-                        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
-                          netflixMode ? "translate-x-4" : "translate-x-0.5"
-                        }`}
-                      />
-                    </div>
-                    <span className="text-[13px] text-[#ccc]">
-                      Mode Netflix{" "}
-                      <span className="text-[11px] text-[#888]">
-                        (r&egrave;gles sous-titrage)
-                      </span>
-                    </span>
-                  </button>
-
                   <Button
                     onClick={handleAnalyze}
                     className="h-11 px-7 rounded-xl gap-2.5 text-[13px] font-semibold bg-white text-black hover:bg-white/90 transition-all active:scale-[0.98]"
@@ -513,6 +512,57 @@ export default function Home() {
                     <Play size={14} weight="fill" />
                     Lancer l&apos;analyse
                   </Button>
+
+                  {/* Options dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowOptions(!showOptions)}
+                      className="flex items-center gap-1.5 text-[12px] text-[#888] hover:text-[#ccc] transition-colors"
+                    >
+                      <GearSix size={13} />
+                      Options
+                      <CaretDown
+                        size={10}
+                        className={`transition-transform duration-200 ${
+                          showOptions ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {showOptions && (
+                      <div className="absolute top-8 left-1/2 -translate-x-1/2 w-64 glass-card rounded-xl p-3 border border-white/[0.08] z-10">
+                        <button
+                          onClick={() => setNetflixMode(!netflixMode)}
+                          className="flex items-center justify-between w-full px-2 py-2 rounded-lg hover:bg-white/[0.04] transition-colors"
+                        >
+                          <div className="text-left">
+                            <p className="text-[12px] text-[#ccc]">
+                              <span className="text-[#e50914] font-semibold">Netflix</span>{" "}
+                              R&egrave;gles de sous-titrage
+                            </p>
+                            <p className="text-[10px] text-[#666]">
+                              42 car/ligne, 2 lignes max, vitesse de lecture, dur&eacute;e
+                            </p>
+                          </div>
+                          <div
+                            className={`w-8 h-[18px] rounded-full transition-colors duration-200 relative shrink-0 ml-3 ${
+                              netflixMode
+                                ? "bg-[#e50914]"
+                                : "bg-white/[0.12]"
+                            }`}
+                          >
+                            <div
+                              className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white transition-transform duration-200 ${
+                                netflixMode
+                                  ? "translate-x-[14px]"
+                                  : "translate-x-[2px]"
+                              }`}
+                            />
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -532,13 +582,50 @@ export default function Home() {
             <p className="text-[16px] font-medium text-white mb-2">
               Analyse en cours
             </p>
-            <p className="text-[13px] text-[#ccc] mb-10">
+            <p className="text-[13px] text-[#ccc] mb-6">
               {currentStep
                 ? `${currentStep}...`
                 : status === "uploading"
                   ? "Envoi de la vid\u00e9o..."
                   : "D\u00e9marrage de l\u2019analyse..."}
             </p>
+
+            {/* Steps indicator */}
+            <div className="max-w-[280px] mx-auto mb-8">
+              {[
+                { label: "Upload", threshold: 5 },
+                { label: "Extraction frames", threshold: 15 },
+                { label: "OCR (lecture texte)", threshold: 30 },
+                { label: "IA Vision (v\u00e9rification)", threshold: 65 },
+                { label: "G\u00e9n\u00e9ration rapport", threshold: 90 },
+              ].map(({ label, threshold }, idx) => {
+                const done = progress >= threshold;
+                const active = progress >= threshold - 15 && progress < threshold + 10;
+                return (
+                  <div
+                    key={idx}
+                    className={`flex items-center gap-2.5 py-1 transition-opacity duration-500 ${
+                      done
+                        ? "opacity-100"
+                        : active
+                          ? "opacity-70"
+                          : "opacity-30"
+                    }`}
+                  >
+                    <div
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
+                        done ? "bg-[#51cf66]" : active ? "bg-white animate-pulse" : "bg-[#555]"
+                      }`}
+                    />
+                    <span className="text-[11px] text-[#bbb]">{label}</span>
+                    {done && (
+                      <CheckCircle size={10} weight="fill" className="text-[#51cf66] ml-auto" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="max-w-[240px] mx-auto">
               <div className="progress-bar-track">
                 <div
@@ -547,7 +634,9 @@ export default function Home() {
                 />
               </div>
               <p className="text-[11px] text-[#bbb] mt-3 font-mono">
-                {progress}%
+                {progress}%{eta && (
+                  <span className="text-[#666] ml-2">&middot; {eta}</span>
+                )}
               </p>
             </div>
           </div>
