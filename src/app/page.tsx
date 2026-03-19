@@ -22,6 +22,7 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import DotMatrix from "@/components/DotMatrix";
+import SmoothScroll from "@/components/SmoothScroll";
 
 /* ──────────────────────────────── Types ──────────────────────────────── */
 
@@ -324,11 +325,12 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Animated dot matrix — subtle, rising particles */}
+    <div className="relative h-screen overflow-hidden flex flex-col">
+      {/* Pixel background */}
       <DotMatrix />
+      <SmoothScroll />
 
-      <main className="relative z-10 mx-auto max-w-2xl px-6 pt-16 pb-12">
+      <main className="relative z-10 mx-auto max-w-2xl px-6 flex-1 flex flex-col justify-center overflow-y-auto">
         {/* ═══════════════ IDLE — Hero + Guide + Upload ═══════════════ */}
         {status === "idle" && (
           <>
@@ -478,7 +480,7 @@ export default function Home() {
                     onClick={handleAnalyze}
                     className="h-11 px-7 rounded-xl gap-2.5 text-[13px] font-semibold bg-white text-black hover:bg-white/90 transition-all active:scale-[0.98]"
                   >
-                    <Play size={14} weight="fill" />
+                    <Play size={14} weight="regular" />
                     Lancer l&apos;analyse
                   </Button>
                 </div>
@@ -493,7 +495,7 @@ export default function Home() {
             <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-6">
               <SpinnerGap
                 size={28}
-                weight="bold"
+                weight="regular"
                 className="text-white animate-spin"
               />
             </div>
@@ -538,7 +540,7 @@ export default function Home() {
                     />
                     <span className="text-[11px] text-[#e5e7eb]">{label}</span>
                     {done && (
-                      <CheckCircle size={10} weight="fill" className="text-[#51cf66] ml-auto" />
+                      <CheckCircle size={10} weight="regular" className="text-[#51cf66] ml-auto" />
                     )}
                   </div>
                 );
@@ -701,7 +703,7 @@ export default function Home() {
                             </span>
                             <ArrowRight
                               size={12}
-                              weight="bold"
+                              weight="regular"
                               className="text-[#d1d5db]"
                             />
                             <span className="text-[#51cf66] font-semibold text-[14px]">
