@@ -672,7 +672,7 @@ export default function Home() {
                     <button
                       key={key}
                       onClick={() => setActiveFilter(key)}
-                      className={`text-[11px] px-2.5 py-1 rounded-full backdrop-blur-md border transition-colors ${
+                      className={`text-[11px] px-2.5 py-1 rounded-none backdrop-blur-md border transition-colors ${
                         activeFilter === key
                           ? "bg-white/[0.15] border-white/[0.2] text-white"
                           : "bg-white/[0.05] border-white/[0.08] text-[#d1d5db] hover:bg-white/[0.1] hover:text-white"
