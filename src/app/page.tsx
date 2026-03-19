@@ -326,17 +326,11 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="bg-gradient-animated" />
+
       {/* Grain overlay */}
       <div className="grain-overlay" />
-
-      {/* Ambient glow */}
-      <div
-        className="pointer-events-none fixed top-[-150px] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[160px]"
-        style={{
-          background:
-            "radial-gradient(ellipse, oklch(1 0 0 / 5%) 0%, transparent 70%)",
-        }}
-      />
 
       {/* ── Nav ── */}
       <nav
