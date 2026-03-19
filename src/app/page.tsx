@@ -573,8 +573,9 @@ export default function Home() {
                 { label: "Upload", threshold: 5 },
                 { label: "Extraction frames", threshold: 15 },
                 { label: "OCR (lecture texte)", threshold: 30 },
-                { label: "IA Vision (v\u00e9rification)", threshold: 65 },
-                { label: "G\u00e9n\u00e9ration rapport", threshold: 90 },
+                { label: "IA Vision (pixels)", threshold: 65 },
+                { label: "Grammaire (contexte)", threshold: 80 },
+                { label: "Confirmation", threshold: 88 },
               ].map(({ label, threshold }, idx) => {
                 const done = progress >= threshold;
                 const active = progress >= threshold - 15 && progress < threshold + 10;
