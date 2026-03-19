@@ -373,16 +373,14 @@ export default function Home() {
               ].map(({ icon: Icon, step, label, sub }) => (
                 <div
                   key={step}
-                  className="glass-card rounded-2xl p-5 group"
+                  className="glass-card p-5 group"
                 >
                   <div className="flex items-center gap-2.5 mb-3">
-                    <div className="w-8 h-8 rounded-xl bg-white/[0.08] flex items-center justify-center">
-                      <Icon
-                        size={16}
-                        weight="regular"
-                        className="text-white"
-                      />
-                    </div>
+                    <Icon
+                      size={16}
+                      weight="regular"
+                      className="text-white"
+                    />
                     <span className="text-[11px] font-medium text-[#e5e7eb] tracking-wider uppercase">
                       {step}
                     </span>
@@ -414,7 +412,7 @@ export default function Home() {
                 onClick={() =>
                   document.getElementById("file-input")?.click()
                 }
-                className={`group relative rounded-2xl cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] glass-upload ${
+                className={`group relative cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] glass-upload ${
                   dragOver ? "drag-over" : ""
                 } ${file ? "p-5" : "py-16 px-8"}`}
               >
@@ -429,13 +427,11 @@ export default function Home() {
 
                 {file ? (
                   <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-white/[0.08] flex items-center justify-center shrink-0">
-                      <FileVideo
-                        size={22}
-                        weight="regular"
-                        className="text-white"
-                      />
-                    </div>
+                    <FileVideo
+                      size={22}
+                      weight="regular"
+                      className="text-white shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] font-medium text-white truncate">
                         {file.name}
@@ -450,20 +446,18 @@ export default function Home() {
                         setFile(null);
                       }}
                       aria-label="Retirer le fichier"
-                      className="p-2 rounded-xl hover:bg-white/[0.08] transition-colors"
+                      className="p-2 hover:bg-white/[0.08] transition-colors"
                     >
                       <X size={16} className="text-[#d1d5db]" />
                     </button>
                   </div>
                 ) : (
                   <div className="text-center">
-                    <div className="w-14 h-14 rounded-2xl glass flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
-                      <UploadSimple
-                        size={24}
-                        weight="regular"
-                        className="text-white"
-                      />
-                    </div>
+                    <UploadSimple
+                      size={28}
+                      weight="regular"
+                      className="text-white mx-auto mb-5 group-hover:scale-105 transition-transform duration-300"
+                    />
                     <p className="text-[15px] font-medium text-white mb-1.5">
                       Glisse ta vid&eacute;o ici
                     </p>
@@ -478,7 +472,7 @@ export default function Home() {
                 <div className="mt-6 flex flex-col items-center gap-4">
                   <Button
                     onClick={handleAnalyze}
-                    className="h-11 px-7 rounded-xl gap-2.5 text-[13px] font-semibold bg-white text-black hover:bg-white/90 transition-all active:scale-[0.98]"
+                    className="h-11 px-7 rounded-none gap-2.5 text-[13px] font-semibold bg-white text-black hover:bg-white/90 transition-all active:scale-[0.98]"
                   >
                     <Play size={14} weight="regular" />
                     Lancer l&apos;analyse
@@ -492,7 +486,7 @@ export default function Home() {
         {/* ═══════════════ ANALYZING ═══════════════ */}
         {(status === "uploading" || status === "analyzing") && (
           <div className="mt-32 text-center">
-            <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-6">
+            <div className="mb-6 mx-auto w-fit">
               <SpinnerGap
                 size={28}
                 weight="regular"
@@ -534,7 +528,7 @@ export default function Home() {
                     }`}
                   >
                     <div
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
+                      className={`w-1.5 h-1.5 rounded-none shrink-0 transition-colors ${
                         done ? "bg-[#51cf66]" : active ? "bg-white animate-pulse" : "bg-[#555]"
                       }`}
                     />
@@ -568,7 +562,7 @@ export default function Home() {
           <div className="mt-6 animate-fade-up delay-1">
             {/* Video player preview */}
             {videoUrl && (
-              <div className="mb-8 glass-card rounded-2xl overflow-hidden">
+              <div className="mb-8 glass-card rounded-none overflow-hidden">
                 <div className="video-player-container">
                   <video
                     ref={videoRef}
@@ -607,7 +601,7 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={exportPremiere}
-                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  className="h-8 px-3 rounded-none text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
                   aria-label="Exporter FCPXML"
                 >
                   <DownloadSimple size={12} />
@@ -617,7 +611,7 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={exportSRT}
-                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  className="h-8 px-3 rounded-none text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
                   aria-label="Exporter SRT"
                 >
                   <Subtitles size={12} />
@@ -627,7 +621,7 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={exportCSV}
-                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  className="h-8 px-3 rounded-none text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
                   aria-label="Exporter CSV"
                 >
                   <FileCsv size={12} />
@@ -637,7 +631,7 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={exportJSON}
-                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  className="h-8 px-3 rounded-none text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
                   aria-label="Exporter JSON"
                 >
                   <DownloadSimple size={12} />
@@ -647,7 +641,7 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={reset}
-                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1 ml-auto"
+                  className="h-8 px-3 rounded-none text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1 ml-auto"
                 >
                   Nouvelle analyse
                 </Button>
@@ -668,7 +662,7 @@ export default function Home() {
                 return (
                   <div
                     key={i}
-                    className={`error-card relative group w-full text-left p-5 rounded-2xl glass-card transition-all duration-200 ${
+                    className={`error-card relative group w-full text-left p-5 rounded-none glass-card transition-all duration-200 ${
                       activeError === i ? "ring-1 ring-white/20" : ""
                     }`}
                   >
@@ -678,7 +672,7 @@ export default function Home() {
                         e.stopPropagation();
                         dismissError(i, error);
                       }}
-                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-white/[0.08]"
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-none hover:bg-white/[0.08]"
                       aria-label="Pas une erreur"
                       title="Pas une erreur"
                     >
@@ -691,7 +685,7 @@ export default function Home() {
                     >
                       <div className="flex items-start gap-4">
                         {/* Timecode */}
-                        <span className="shrink-0 mt-0.5 text-[11px] font-mono text-white bg-white/[0.08] px-2.5 py-1 rounded-lg">
+                        <span className="shrink-0 mt-0.5 text-[11px] font-mono text-white bg-white/[0.08] px-2.5 py-1 rounded-none">
                           {error.timecode}
                         </span>
 
@@ -719,7 +713,7 @@ export default function Home() {
 
                           {/* Screenshot proof */}
                           {error.screenshot_b64 && (
-                            <div className="mt-3 rounded-lg overflow-hidden border border-white/[0.08]">
+                            <div className="mt-3 rounded-none overflow-hidden border border-white/[0.08]">
                               <img
                                 src={error.screenshot_b64}
                                 alt={`Preuve: ${error.word}`}
@@ -754,7 +748,7 @@ export default function Home() {
             </div>
 
             {/* Disclaimer */}
-            <div className="mt-8 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <div className="mt-8 px-4 py-3 rounded-none bg-white/[0.03] border border-white/[0.06]">
               <p className="text-[11px] text-[#d1d5db] leading-relaxed">
                 Les r&eacute;sultats sont fournis &agrave; titre indicatif.
                 La d&eacute;tection d&eacute;pend de la qualit&eacute; vid&eacute;o, de la police
@@ -765,7 +759,7 @@ export default function Home() {
 
             {result.total_errors === 0 && (
               <div className="text-center py-24">
-                <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-5">
+                <div className="w-16 h-16 rounded-none glass flex items-center justify-center mx-auto mb-5">
                   <CheckCircle
                     size={32}
                     weight="regular"
@@ -786,7 +780,7 @@ export default function Home() {
         {/* ═══════════════ ERROR ═══════════════ */}
         {status === "error" && (
           <div className="mt-32 text-center">
-            <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-6">
+            <div className="w-16 h-16 rounded-none glass flex items-center justify-center mx-auto mb-6">
               <Warning size={28} weight="regular" className="text-[#ff6b6b]" />
             </div>
             <p className="text-[16px] font-medium text-white mb-2">
@@ -798,7 +792,7 @@ export default function Home() {
             <Button
               variant="ghost"
               onClick={reset}
-              className="rounded-xl text-[13px] text-[#d1d5db] hover:text-white"
+              className="rounded-none text-[13px] text-[#d1d5db] hover:text-white"
             >
               R&eacute;essayer
             </Button>
@@ -807,8 +801,8 @@ export default function Home() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="relative z-10 border-t border-white/[0.06] py-6">
-        <div className="mx-auto max-w-3xl px-6 space-y-2">
+      <footer className="relative z-10 border-t border-white/[0.06] py-8 mt-16">
+        <div className="mx-auto max-w-2xl px-6 space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-[11px] text-[#d1d5db]">
               &copy; {new Date().getFullYear()} SpellCut
