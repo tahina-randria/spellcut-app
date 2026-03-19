@@ -96,6 +96,7 @@ export default function Home() {
   const [showOptions, setShowOptions] = useState(false);
   const [eta, setEta] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [activeFilter, setActiveFilter] = useState<string>("all");
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -230,6 +231,7 @@ export default function Home() {
     setProgress(0);
     setActiveError(null);
     setDismissedErrors(new Set());
+    setActiveFilter("all");
     setNetflixMode(false);
   };
 
@@ -507,12 +509,12 @@ export default function Home() {
             {/* Steps indicator */}
             <div className="max-w-[280px] mx-auto mb-8">
               {[
-                { label: "Upload", threshold: 5 },
-                { label: "Extraction frames", threshold: 15 },
-                { label: "OCR (lecture texte)", threshold: 30 },
-                { label: "IA Vision (pixels)", threshold: 65 },
-                { label: "Grammaire (contexte)", threshold: 80 },
-                { label: "Confirmation", threshold: 88 },
+                { label: "Envoi", threshold: 5 },
+                { label: "Lecture vidéo", threshold: 15 },
+                { label: "Détection du texte", threshold: 30 },
+                { label: "Vérification orthographe", threshold: 65 },
+                { label: "Analyse grammaire", threshold: 80 },
+                { label: "Finalisation", threshold: 88 },
               ].map(({ label, threshold }, idx) => {
                 const done = progress >= threshold;
                 const active = progress >= threshold - 15 && progress < threshold + 10;
@@ -592,8 +594,12 @@ export default function Home() {
                 </h2>
                 <p className="text-[12px] text-[#d1d5db] mt-1">
                   {file?.name} &middot;{" "}
-                  {result.video_info?.duration.toFixed(0)}s &middot;{" "}
-                  {result.processing_time_seconds.toFixed(1)}s d&apos;analyse
+                  {result.video_info?.duration && result.video_info.duration > 60
+                    ? `${Math.round(result.video_info.duration / 60)} min`
+                    : `${result.video_info?.duration.toFixed(0)}s`} &middot;{" "}
+                  {result.processing_time_seconds > 60
+                    ? `~${Math.round(result.processing_time_seconds / 60)} min d'analyse`
+                    : `${result.processing_time_seconds.toFixed(0)}s d'analyse`}
                 </p>
               </div>
               <div className="flex gap-1.5 flex-wrap">
@@ -650,15 +656,41 @@ export default function Home() {
 
             {/* Error list — Orthographe */}
             {result.errors.filter(e => !["ligne_trop_longue", "trop_de_lignes", "vitesse_lecture", "duree_min", "duree_max"].includes(e.type)).length > 0 && (
-              <h3 className="text-[14px] font-medium text-white mb-3">
-                Orthographe &amp; grammaire
-              </h3>
+              <>
+                <h3 className="text-[14px] font-medium text-white mb-3">
+                  Orthographe &amp; grammaire
+                </h3>
+                {/* Filter buttons */}
+                <div className="inline-flex gap-1.5 mb-4 flex-wrap">
+                  {[
+                    { key: "all", label: "Tout" },
+                    { key: "orthographe", label: "Orthographe" },
+                    { key: "grammaire", label: "Grammaire" },
+                    { key: "accent", label: "Accents" },
+                    { key: "typographie", label: "Typographie" },
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setActiveFilter(key)}
+                      className={`text-[11px] px-2.5 py-1 rounded-full backdrop-blur-md border transition-colors ${
+                        activeFilter === key
+                          ? "bg-white/[0.15] border-white/[0.2] text-white"
+                          : "bg-white/[0.05] border-white/[0.08] text-[#d1d5db] hover:bg-white/[0.1] hover:text-white"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
             <div className="space-y-3">
               {result.errors.map((error, i) => {
                 // Skip Netflix errors in this section
                 if (["ligne_trop_longue", "trop_de_lignes", "vitesse_lecture", "duree_min", "duree_max"].includes(error.type)) return null;
                 if (dismissedErrors.has(i)) return null;
+                // Apply type filter
+                if (activeFilter !== "all" && !error.type.toLowerCase().includes(activeFilter)) return null;
                 return (
                   <div
                     key={i}

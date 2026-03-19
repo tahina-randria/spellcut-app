@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "spellcut-app",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/Users/tahina/Downloads/spellcut-app/node_modules/.bin/next",
+      "runtimeArgs": ["dev", "--port", "3002"],
       "port": 3002
     }
   ]
