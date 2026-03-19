@@ -21,8 +21,7 @@ import {
   CaretDown,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-// GSAP available for future interactive animations
-// import gsap from "gsap";
+import DotMatrix from "@/components/DotMatrix";
 
 /* ──────────────────────────────── Types ──────────────────────────────── */
 
@@ -326,8 +325,8 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Dot matrix background */}
-      <div className="bg-dot-matrix" />
+      {/* Animated dot matrix — subtle, rising particles */}
+      <DotMatrix />
 
       <main className="relative z-10 mx-auto max-w-2xl px-6 pt-16 pb-12">
         {/* ═══════════════ IDLE — Hero + Guide + Upload ═══════════════ */}
