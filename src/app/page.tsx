@@ -350,7 +350,7 @@ export default function Home() {
           {status === "done" && (
             <button
               onClick={reset}
-              className="text-[12px] text-[#ccc] hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-white/30"
+              className="text-[12px] text-[#d1d5db] hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-white/30"
               aria-label="Nouvelle analyse"
             >
               Nouvelle analyse
@@ -370,7 +370,7 @@ export default function Home() {
                 <br />
                 de ta vid&eacute;o
               </h1>
-              <p className="text-[15px] text-[#ccc] max-w-md mx-auto leading-relaxed">
+              <p className="text-[15px] text-[#d1d5db] max-w-md mx-auto leading-relaxed">
                 Titres, sous-titres, lower thirds. Chaque texte est lu
                 directement depuis les pixels de ta vid&eacute;o.
               </p>
@@ -412,14 +412,14 @@ export default function Home() {
                         className="text-white"
                       />
                     </div>
-                    <span className="text-[11px] font-medium text-[#bbb] tracking-wider uppercase">
+                    <span className="text-[11px] font-medium text-[#e5e7eb] tracking-wider uppercase">
                       {step}
                     </span>
                   </div>
                   <p className="text-[13px] font-medium text-white mb-0.5">
                     {label}
                   </p>
-                  <p className="text-[12px] text-[#ccc]">{sub}</p>
+                  <p className="text-[12px] text-[#d1d5db]">{sub}</p>
                 </div>
               ))}
             </div>
@@ -469,7 +469,7 @@ export default function Home() {
                       <p className="text-[14px] font-medium text-white truncate">
                         {file.name}
                       </p>
-                      <p className="text-[12px] text-[#ccc]">
+                      <p className="text-[12px] text-[#d1d5db]">
                         {(file.size / (1024 * 1024)).toFixed(1)} Mo
                       </p>
                     </div>
@@ -481,7 +481,7 @@ export default function Home() {
                       aria-label="Retirer le fichier"
                       className="p-2 rounded-xl hover:bg-white/[0.08] transition-colors"
                     >
-                      <X size={16} className="text-[#ccc]" />
+                      <X size={16} className="text-[#d1d5db]" />
                     </button>
                   </div>
                 ) : (
@@ -496,7 +496,7 @@ export default function Home() {
                     <p className="text-[15px] font-medium text-white mb-1.5">
                       Glisse ta vid&eacute;o ici
                     </p>
-                    <p className="text-[13px] text-[#ccc]">
+                    <p className="text-[13px] text-[#d1d5db]">
                       ou clique pour parcourir &middot; MP4, MOV
                     </p>
                   </div>
@@ -531,7 +531,7 @@ export default function Home() {
             <p className="text-[16px] font-medium text-white mb-2">
               Analyse en cours
             </p>
-            <p className="text-[13px] text-[#ccc] mb-6">
+            <p className="text-[13px] text-[#d1d5db] mb-6">
               {currentStep
                 ? `${currentStep}...`
                 : status === "uploading"
@@ -567,7 +567,7 @@ export default function Home() {
                         done ? "bg-[#51cf66]" : active ? "bg-white animate-pulse" : "bg-[#555]"
                       }`}
                     />
-                    <span className="text-[11px] text-[#bbb]">{label}</span>
+                    <span className="text-[11px] text-[#e5e7eb]">{label}</span>
                     {done && (
                       <CheckCircle size={10} weight="fill" className="text-[#51cf66] ml-auto" />
                     )}
@@ -583,9 +583,9 @@ export default function Home() {
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-[11px] text-[#bbb] mt-3 font-mono">
+              <p className="text-[11px] text-[#e5e7eb] mt-3 font-mono">
                 {progress}%{eta && (
-                  <span className="text-[#666] ml-2">&middot; {eta}</span>
+                  <span className="text-[#d1d5db] ml-2">&middot; {eta}</span>
                 )}
               </p>
             </div>
@@ -609,10 +609,10 @@ export default function Home() {
                   />
                 </div>
                 <div className="px-4 py-3 flex items-center justify-between border-t border-white/[0.06]">
-                  <p className="text-[12px] text-[#ccc]">
+                  <p className="text-[12px] text-[#d1d5db]">
                     Clique sur une erreur pour aller au timecode
                   </p>
-                  <Cursor size={14} className="text-[#bbb]" />
+                  <Cursor size={14} className="text-[#e5e7eb]" />
                 </div>
               </div>
             )}
@@ -625,7 +625,7 @@ export default function Home() {
                   {result.total_errors > 1 ? "s" : ""} trouv&eacute;e
                   {result.total_errors > 1 ? "s" : ""}
                 </h2>
-                <p className="text-[12px] text-[#ccc] mt-1">
+                <p className="text-[12px] text-[#d1d5db] mt-1">
                   {file?.name} &middot;{" "}
                   {result.video_info?.duration.toFixed(0)}s &middot;{" "}
                   {result.processing_time_seconds.toFixed(1)}s d&apos;analyse
@@ -636,7 +636,7 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={exportPremiere}
-                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
                   aria-label="Exporter FCPXML"
                 >
                   <DownloadSimple size={12} />
@@ -646,7 +646,7 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={exportSRT}
-                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
                   aria-label="Exporter SRT"
                 >
                   <Subtitles size={12} />
@@ -656,7 +656,7 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={exportCSV}
-                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
                   aria-label="Exporter CSV"
                 >
                   <FileCsv size={12} />
@@ -666,7 +666,7 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={exportJSON}
-                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#e5e7eb] hover:text-white hover:bg-white/[0.06] gap-1"
                   aria-label="Exporter JSON"
                 >
                   <DownloadSimple size={12} />
@@ -703,7 +703,7 @@ export default function Home() {
                       aria-label="Pas une erreur"
                       title="Pas une erreur"
                     >
-                      <ThumbsDown size={14} className="text-[#888]" />
+                      <ThumbsDown size={14} className="text-[#d1d5db]" />
                     </button>
 
                     <button
@@ -725,16 +725,16 @@ export default function Home() {
                             <ArrowRight
                               size={12}
                               weight="bold"
-                              className="text-[#aaa]"
+                              className="text-[#d1d5db]"
                             />
                             <span className="text-[#51cf66] font-semibold text-[14px]">
                               {error.correction}
                             </span>
                           </div>
-                          <p className="text-[13px] text-[#aaa] leading-relaxed">
+                          <p className="text-[13px] text-[#d1d5db] leading-relaxed">
                             {error.explanation}
                           </p>
-                          <p className="text-[12px] text-[#bbb] mt-1.5">
+                          <p className="text-[12px] text-[#e5e7eb] mt-1.5">
                             &laquo;&nbsp;{error.context}&nbsp;&raquo;
                           </p>
 
@@ -763,7 +763,7 @@ export default function Home() {
                           >
                             {error.confidence}%
                           </span>
-                          <span className="text-[10px] text-[#bbb] uppercase tracking-wider">
+                          <span className="text-[10px] text-[#e5e7eb] uppercase tracking-wider">
                             {error.type}
                           </span>
                         </div>
@@ -776,7 +776,7 @@ export default function Home() {
 
             {/* Disclaimer */}
             <div className="mt-8 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-              <p className="text-[11px] text-[#888] leading-relaxed">
+              <p className="text-[11px] text-[#d1d5db] leading-relaxed">
                 Les r&eacute;sultats sont fournis &agrave; titre indicatif.
                 La d&eacute;tection d&eacute;pend de la qualit&eacute; vid&eacute;o, de la police
                 utilis&eacute;e et du contexte. V&eacute;rifiez toujours les suggestions
@@ -796,7 +796,7 @@ export default function Home() {
                 <p className="text-[16px] font-medium text-white">
                   Aucune erreur d&eacute;tect&eacute;e
                 </p>
-                <p className="text-[13px] text-[#ccc] mt-2">
+                <p className="text-[13px] text-[#d1d5db] mt-2">
                   Tous les textes de ta vid&eacute;o sont corrects.
                 </p>
               </div>
@@ -813,13 +813,13 @@ export default function Home() {
             <p className="text-[16px] font-medium text-white mb-2">
               Erreur
             </p>
-            <p className="text-[13px] text-[#ccc] mb-8 max-w-sm mx-auto">
+            <p className="text-[13px] text-[#d1d5db] mb-8 max-w-sm mx-auto">
               {errorMessage || "V\u00e9rifie ta connexion et r\u00e9essaie."}
             </p>
             <Button
               variant="ghost"
               onClick={reset}
-              className="rounded-xl text-[13px] text-[#ccc] hover:text-white"
+              className="rounded-xl text-[13px] text-[#d1d5db] hover:text-white"
             >
               R&eacute;essayer
             </Button>
@@ -831,14 +831,14 @@ export default function Home() {
       <footer className="relative z-10 border-t border-white/[0.06] py-6">
         <div className="mx-auto max-w-3xl px-6 space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] text-[#aaa]">
+            <p className="text-[11px] text-[#d1d5db]">
               &copy; {new Date().getFullYear()} SpellCut
             </p>
-            <p className="text-[11px] text-[#aaa]">
+            <p className="text-[11px] text-[#d1d5db]">
               Par Tahina Randrianandraina
             </p>
           </div>
-          <p className="text-[10px] text-[#666] leading-relaxed">
+          <p className="text-[10px] text-[#d1d5db] leading-relaxed">
             Outil d&apos;aide &agrave; la d&eacute;tection. Les r&eacute;sultats d&eacute;pendent
             de la qualit&eacute; vid&eacute;o, des polices et du contexte. SpellCut ne se
             substitue pas &agrave; une relecture humaine.
