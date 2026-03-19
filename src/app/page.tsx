@@ -95,6 +95,7 @@ export default function Home() {
   const [dismissedErrors, setDismissedErrors] = useState<Set<number>>(new Set());
   const [showOptions, setShowOptions] = useState(false);
   const [eta, setEta] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -160,7 +161,7 @@ export default function Home() {
 
       // Step 2: Poll job status until done
       let attempts = 0;
-      const maxAttempts = 300; // 15 min max (3s * 300)
+      const maxAttempts = 600; // 30 min max (3s * 600)
 
       while (attempts < maxAttempts) {
         await new Promise((r) => setTimeout(r, 3000));
@@ -198,7 +199,11 @@ export default function Home() {
         }
 
         if (job.status === "error") {
-          throw new Error(job.error || "Analysis failed");
+          const msg = job.error || "Analysis failed";
+          if (msg.includes("timeout")) {
+            throw new Error("La vid\u00e9o est trop longue pour le GPU. Essaie avec une vid\u00e9o plus courte (<10 min).");
+          }
+          throw new Error(msg);
         }
 
         // Smooth progress simulation between polls (increment by small steps)
@@ -213,6 +218,7 @@ export default function Home() {
       throw new Error("Analysis timed out after 15 minutes");
     } catch (err) {
       console.error("Analysis failed:", err);
+      setErrorMessage(err instanceof Error ? err.message : "Une erreur est survenue");
       setStatus("error");
     }
   };
@@ -863,8 +869,8 @@ export default function Home() {
             <p className="text-[16px] font-medium text-white mb-2">
               Erreur
             </p>
-            <p className="text-[13px] text-[#ccc] mb-8">
-              V&eacute;rifie ta connexion et r&eacute;essaie.
+            <p className="text-[13px] text-[#ccc] mb-8 max-w-sm mx-auto">
+              {errorMessage || "V\u00e9rifie ta connexion et r\u00e9essaie."}
             </p>
             <Button
               variant="ghost"
