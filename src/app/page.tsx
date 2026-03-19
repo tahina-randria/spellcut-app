@@ -14,6 +14,9 @@ import {
   Cursor,
   Eye,
   Export,
+  ThumbsDown,
+  FileCsv,
+  Subtitles,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 // GSAP available for future interactive animations
@@ -33,6 +36,7 @@ interface SpellError {
   confidence_level: string;
   explanation: string;
   context: string;
+  screenshot_b64?: string;
 }
 
 interface AnalysisResult {
@@ -85,6 +89,8 @@ export default function Home() {
   const [activeError, setActiveError] = useState<number | null>(null);
   const [currentStep, setCurrentStep] = useState<string>("");
   const [jobId, setJobId] = useState<string | null>(null);
+  const [netflixMode, setNetflixMode] = useState(false);
+  const [dismissedErrors, setDismissedErrors] = useState<Set<number>>(new Set());
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -131,6 +137,7 @@ export default function Home() {
       // Step 1: Upload video → get job_id
       const formData = new FormData();
       formData.append("video", file);
+      formData.append("netflix_mode", netflixMode ? "true" : "false");
 
       const uploadRes = await fetch(`${API_URL}/analyze`, {
         method: "POST",
@@ -192,6 +199,8 @@ export default function Home() {
     setResult(null);
     setProgress(0);
     setActiveError(null);
+    setDismissedErrors(new Set());
+    setNetflixMode(false);
   };
 
   const seekToError = (error: SpellError, index: number) => {
@@ -233,6 +242,56 @@ export default function Home() {
       "spellcut-result.json",
       "application/json"
     );
+  };
+
+  const exportSRT = async () => {
+    if (!jobId) return;
+    try {
+      const res = await fetch(`${API_URL}/jobs/${jobId}/srt`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `SpellCut_${file?.name?.replace(/\.[^.]+$/, "") || "video"}.srt`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {}
+  };
+
+  const exportCSV = async () => {
+    if (!jobId) return;
+    try {
+      const res = await fetch(`${API_URL}/jobs/${jobId}/csv`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `SpellCut_${file?.name?.replace(/\.[^.]+$/, "") || "video"}_errors.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {}
+  };
+
+  const dismissError = async (index: number, error: SpellError) => {
+    setDismissedErrors((prev) => new Set(prev).add(index));
+    if (!jobId) return;
+    try {
+      await fetch(`${API_URL}/jobs/${jobId}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          error_index: index,
+          word: error.word,
+          correction: error.correction,
+          error_type: error.type,
+          feedback: "false_positive",
+        }),
+      });
+    } catch {}
   };
 
   return (
@@ -421,7 +480,32 @@ export default function Home() {
               </div>
 
               {file && (
-                <div className="mt-6 flex justify-center">
+                <div className="mt-6 flex flex-col items-center gap-4">
+                  {/* Netflix mode toggle */}
+                  <button
+                    onClick={() => setNetflixMode(!netflixMode)}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl glass-card transition-all hover:scale-[1.01]"
+                    aria-label="Activer le mode Netflix"
+                  >
+                    <div
+                      className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${
+                        netflixMode ? "bg-[#e50914]" : "bg-white/[0.12]"
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
+                          netflixMode ? "translate-x-4" : "translate-x-0.5"
+                        }`}
+                      />
+                    </div>
+                    <span className="text-[13px] text-[#ccc]">
+                      Mode Netflix{" "}
+                      <span className="text-[11px] text-[#888]">
+                        (r&egrave;gles sous-titrage)
+                      </span>
+                    </span>
+                  </button>
+
                   <Button
                     onClick={handleAnalyze}
                     className="h-11 px-7 rounded-xl gap-2.5 text-[13px] font-semibold bg-white text-black hover:bg-white/90 transition-all active:scale-[0.98]"
@@ -508,25 +592,45 @@ export default function Home() {
                   {result.processing_time_seconds.toFixed(1)}s d&apos;analyse
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 flex-wrap">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={exportPremiere}
-                  className="h-9 px-4 rounded-xl text-[12px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1.5"
-                  aria-label="Exporter les markers pour Premiere Pro"
+                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  aria-label="Exporter FCPXML"
                 >
-                  <DownloadSimple size={14} />
-                  Premiere Pro
+                  <DownloadSimple size={12} />
+                  FCPXML
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={exportSRT}
+                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  aria-label="Exporter SRT"
+                >
+                  <Subtitles size={12} />
+                  SRT
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={exportCSV}
+                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  aria-label="Exporter CSV"
+                >
+                  <FileCsv size={12} />
+                  CSV
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={exportJSON}
-                  className="h-9 px-4 rounded-xl text-[12px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1.5"
-                  aria-label="Exporter en JSON"
+                  className="h-8 px-3 rounded-lg text-[11px] font-medium text-[#bbb] hover:text-white hover:bg-white/[0.06] gap-1"
+                  aria-label="Exporter JSON"
                 >
-                  <DownloadSimple size={14} />
+                  <DownloadSimple size={12} />
                   JSON
                 </Button>
               </div>
@@ -534,58 +638,94 @@ export default function Home() {
 
             {/* Error list */}
             <div className="space-y-3">
-              {result.errors.map((error, i) => (
-                <button
-                  key={i}
-                  onClick={() => seekToError(error, i)}
-                  className={`error-card w-full text-left p-5 rounded-2xl glass-card transition-all duration-200 cursor-pointer hover:scale-[1.01] focus-visible:ring-2 focus-visible:ring-white/30 ${
-                    activeError === i
-                      ? "ring-1 ring-white/20"
-                      : ""
-                  }`}
-                  aria-label={`Erreur \u00e0 ${error.timecode}: ${error.word} devrait \u00eatre ${error.correction}`}
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Timecode */}
-                    <span className="shrink-0 mt-0.5 text-[11px] font-mono text-white bg-white/[0.08] px-2.5 py-1 rounded-lg">
-                      {error.timecode}
-                    </span>
+              {result.errors.map((error, i) => {
+                if (dismissedErrors.has(i)) return null;
+                return (
+                  <div
+                    key={i}
+                    className={`error-card relative group w-full text-left p-5 rounded-2xl glass-card transition-all duration-200 ${
+                      activeError === i ? "ring-1 ring-white/20" : ""
+                    }`}
+                  >
+                    {/* Dismiss button — hover reveal */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        dismissError(i, error);
+                      }}
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-white/[0.08]"
+                      aria-label="Pas une erreur"
+                      title="Pas une erreur"
+                    >
+                      <ThumbsDown size={14} className="text-[#888]" />
+                    </button>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2.5 mb-2">
-                        <span className="text-[#ff6b6b] font-semibold text-[14px] line-through decoration-[#ff6b6b]/40">
-                          {error.word}
+                    <button
+                      onClick={() => seekToError(error, i)}
+                      className="w-full text-left cursor-pointer"
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Timecode */}
+                        <span className="shrink-0 mt-0.5 text-[11px] font-mono text-white bg-white/[0.08] px-2.5 py-1 rounded-lg">
+                          {error.timecode}
                         </span>
-                        <ArrowRight
-                          size={12}
-                          weight="bold"
-                          className="text-[#aaa]"
-                        />
-                        <span className="text-[#51cf66] font-semibold text-[14px]">
-                          {error.correction}
-                        </span>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2.5 mb-2">
+                            <span className="text-[#ff6b6b] font-semibold text-[14px] line-through decoration-[#ff6b6b]/40">
+                              {error.word}
+                            </span>
+                            <ArrowRight
+                              size={12}
+                              weight="bold"
+                              className="text-[#aaa]"
+                            />
+                            <span className="text-[#51cf66] font-semibold text-[14px]">
+                              {error.correction}
+                            </span>
+                          </div>
+                          <p className="text-[13px] text-[#aaa] leading-relaxed">
+                            {error.explanation}
+                          </p>
+                          <p className="text-[12px] text-[#bbb] mt-1.5">
+                            &laquo;&nbsp;{error.context}&nbsp;&raquo;
+                          </p>
+
+                          {/* Screenshot proof */}
+                          {error.screenshot_b64 && (
+                            <div className="mt-3 rounded-lg overflow-hidden border border-white/[0.08]">
+                              <img
+                                src={error.screenshot_b64}
+                                alt={`Preuve: ${error.word}`}
+                                className="w-full max-h-32 object-contain bg-black/50"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Confidence */}
+                        <div className="shrink-0 flex flex-col items-end gap-1">
+                          <span
+                            className={`text-[13px] font-semibold ${
+                              error.confidence >= 90
+                                ? "text-[#ff6b6b]"
+                                : error.confidence >= 70
+                                  ? "text-[#ffaa00]"
+                                  : "text-[#51cf66]"
+                            }`}
+                          >
+                            {error.confidence}%
+                          </span>
+                          <span className="text-[10px] text-[#bbb] uppercase tracking-wider">
+                            {error.type}
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-[13px] text-[#aaa] leading-relaxed">
-                        {error.explanation}
-                      </p>
-                      <p className="text-[12px] text-[#bbb] mt-1.5">
-                        &laquo;&nbsp;{error.context}&nbsp;&raquo;
-                      </p>
-                    </div>
-
-                    {/* Confidence */}
-                    <div className="shrink-0 flex flex-col items-end gap-1">
-                      <span className="text-[13px] font-semibold text-[#51cf66]">
-                        {error.confidence}%
-                      </span>
-                      <span className="text-[10px] text-[#bbb] uppercase tracking-wider">
-                        {error.type}
-                      </span>
-                    </div>
+                    </button>
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
 
             {result.total_errors === 0 && (
