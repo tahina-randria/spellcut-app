@@ -46,6 +46,7 @@ interface AnalysisResult {
   high_confidence_errors: number;
   medium_confidence_errors: number;
   processing_time_seconds: number;
+  total_wall_time_seconds?: number;
   errors: SpellError[];
   video_info?: { duration: number; resolution: string };
 }
@@ -641,9 +642,10 @@ export default function Home() {
                   {result.video_info?.duration && result.video_info.duration > 60
                     ? `${Math.round(result.video_info.duration / 60)} min`
                     : `${result.video_info?.duration.toFixed(0)}s`} &middot;{" "}
+                  Analys&eacute; en{" "}
                   {result.processing_time_seconds > 60
-                    ? `~${Math.round(result.processing_time_seconds / 60)} min d'analyse`
-                    : `${result.processing_time_seconds.toFixed(0)}s d'analyse`}
+                    ? `${Math.round(result.processing_time_seconds / 60)} min`
+                    : `${result.processing_time_seconds.toFixed(0)}s`}
                 </p>
               </div>
               <div className="flex gap-1.5 flex-wrap">
