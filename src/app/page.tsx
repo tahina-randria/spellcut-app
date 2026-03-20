@@ -472,6 +472,50 @@ export default function Home() {
 
               {file && (
                 <div className="mt-6 flex flex-col items-center gap-4">
+                  {/* Options toggle */}
+                  <button
+                    onClick={() => setShowOptions(!showOptions)}
+                    className="flex items-center gap-1.5 text-[12px] text-[#d1d5db] hover:text-white transition-colors"
+                  >
+                    <GearSix size={13} weight="regular" />
+                    Options
+                    <CaretDown
+                      size={10}
+                      weight="regular"
+                      className={`transition-transform ${showOptions ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {showOptions && (
+                    <div className="w-full glass-card p-4 space-y-3 animate-fade-up">
+                      {/* Netflix mode toggle */}
+                      <label className="flex items-center justify-between cursor-pointer">
+                        <div>
+                          <p className="text-[13px] font-medium text-white">
+                            Mode Netflix
+                          </p>
+                          <p className="text-[11px] text-[#d1d5db]">
+                            V&eacute;rifie les r&egrave;gles de sous-titrage Netflix FR
+                          </p>
+                        </div>
+                        <button
+                          role="switch"
+                          aria-checked={netflixMode}
+                          onClick={() => setNetflixMode(!netflixMode)}
+                          className={`relative w-10 h-5 rounded-full transition-colors ${
+                            netflixMode ? "bg-[#e50914]" : "bg-white/[0.15]"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                              netflixMode ? "translate-x-5" : ""
+                            }`}
+                          />
+                        </button>
+                      </label>
+                    </div>
+                  )}
+
                   <Button
                     onClick={handleAnalyze}
                     className="h-11 px-7 rounded-none gap-2.5 text-[13px] font-semibold bg-white text-black hover:bg-white/90 transition-all active:scale-[0.98]"
@@ -778,6 +822,40 @@ export default function Home() {
                 );
               })}
             </div>
+
+            {/* Netflix errors section */}
+            {result.errors.filter(e => ["ligne_trop_longue", "trop_de_lignes", "vitesse_lecture", "duree_min", "duree_max"].includes(e.type)).length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-[14px] font-medium text-white mb-3 flex items-center gap-2">
+                  <span className="text-[#e50914]">N</span>
+                  R&egrave;gles Netflix
+                </h3>
+                <div className="space-y-2">
+                  {result.errors
+                    .map((error, i) => ({ error, i }))
+                    .filter(({ error }) => ["ligne_trop_longue", "trop_de_lignes", "vitesse_lecture", "duree_min", "duree_max"].includes(error.type))
+                    .map(({ error, i }) => (
+                      <button
+                        key={i}
+                        onClick={() => seekToError(error, i)}
+                        className="w-full text-left p-4 glass-card rounded-none transition-all hover:bg-white/[0.04]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="shrink-0 text-[11px] font-mono text-white bg-[#e50914]/20 px-2 py-0.5 rounded-none">
+                            {error.timecode}
+                          </span>
+                          <span className="text-[13px] text-[#d1d5db] flex-1">
+                            {error.explanation}
+                          </span>
+                          <span className="text-[10px] text-[#e5e7eb] uppercase tracking-wider">
+                            {error.type.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
 
             {/* Disclaimer */}
             <div className="mt-8 px-4 py-3 rounded-none bg-white/[0.03] border border-white/[0.06]">
